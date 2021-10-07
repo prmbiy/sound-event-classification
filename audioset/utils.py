@@ -33,8 +33,9 @@ random_erasing = RandomErasing()
 
 class AudioDataset(Dataset):
 
-    def __init__(self, df, feature_type="logmelspec", perm=[0,1,2,3,4], spec_transform=None, image_transform=None, resize=None):
+    def __init__(self, workspace, df, feature_type="logmelspec", perm=[0,1,2,3,4], spec_transform=None, image_transform=None, resize=None):
         
+        self.workspace = workspace
         self.df = df
         self.filenames = df[0].unique()
         self.feature_type = feature_type
@@ -44,8 +45,8 @@ class AudioDataset(Dataset):
         self.resize = ResizeSpectrogram(frames=resize)
         self.pil = transforms.ToPILImage()
 
-        self.channel_means = np.load('./data/statistics/channel_means_{}_{}.npy'.format(feature_type, str(perm[0])+str(perm[1])+str(perm[2])))
-        self.channel_stds = np.load('./data/statistics/channel_stds_{}_{}.npy'.format(feature_type, str(perm[0])+str(perm[1])+str(perm[2])))
+        self.channel_means = np.load('{}/statistics/channel_means_{}_{}.npy'.format(workspace, feature_type, str(perm[0])+str(perm[1])+str(perm[2])))
+        self.channel_stds = np.load('{}/statistics/channel_stds_{}_{}.npy'.format(workspace, feature_type, str(perm[0])+str(perm[1])+str(perm[2])))
 
         self.channel_means = self.channel_means.reshape(1,-1,1)
         self.channel_stds = self.channel_stds.reshape(1,-1,1)
@@ -58,8 +59,8 @@ class AudioDataset(Dataset):
         curr = self.df.iloc[idx, :]
         file_name = curr[0]
         labels = class_mapping[file_name.split('-')[0]]
-
-        sample = np.load('./data/' + self.feature_type + '/' + file_name + '.wav.npy')
+        
+        sample = np.load(self.workspace + '/' + self.feature_type + '/' + file_name + '.wav.npy')
         
         if self.resize:
             sample = self.resize(sample)
@@ -70,7 +71,7 @@ class AudioDataset(Dataset):
         if self.spec_transform:
             sample = self.spec_transform(sample)
 
-        sample = sample.transpose(0,1)
+#        sample = sample.transpose(0,1)
         
         if self.image_transform:
             # min-max transformation
@@ -87,6 +88,7 @@ class AudioDataset(Dataset):
 
             # apply albumentations transforms
             sample = np.array(self.pil(sample))
+#            print(sample.shape)
             sample = self.image_transform(image=sample)
             sample = sample['image']
             sample = sample[None, :, :].permute(0, 2, 1)
@@ -128,6 +130,8 @@ class Task5Model(nn.Module):
         x = self.bw2col(x)
         x = self.mv2.features(x)
         x = x.max(dim=-1)[0].max(dim=-1)[0]
+        print(x.size())
+#        x = x.transpose(0,1)
         x = self.final(x)
         return x
 

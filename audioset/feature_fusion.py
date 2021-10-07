@@ -29,10 +29,11 @@ class_mapping['siren'] = 8
 
 class FeatureFusion(nn.Module):
 
-    def __init__(self, l_weight, c_weight, g_weight, num_classes, perm_name):
+    def __init__(self, workspace, l_weight, c_weight, g_weight, num_classes, perm_name):
 
         super().__init__()
         
+        self.workspace = workspace
         self.logmel = Task5Model(num_classes)
         self.cqt = Task5Model(num_classes)
         self.gammatone = Task5Model(num_classes)
@@ -43,9 +44,9 @@ class FeatureFusion(nn.Module):
         self.init_weights()
         
     def init_weights(self):
-        self.logmel.load_state_dict(torch.load('./model/model_logmelspec_' + self.perm_name))
-        self.cqt.load_state_dict(torch.load('./model/model_cqt_' + self.perm_name))
-        self.gammatone.load_state_dict(torch.load('./model/model_gammatone_' + self.perm_name))
+        self.logmel.load_state_dict(torch.load('{}/model/model_logmelspec_{}'.format(self.workspace, self.perm_name)))
+        self.cqt.load_state_dict(torch.load('{}/model/model_cqt_{}'.format(self.workspace, self.perm_name)))
+        self.gammatone.load_state_dict(torch.load('{}/model/model_gammatone_{}'.format(self.workspace, self.perm_name)))
         print('Loaded')
     
     def forward(self, x1, x2, x3):
@@ -61,11 +62,11 @@ class FeatureFusion(nn.Module):
   
         return x
 
-def load_dict(name):
-    with open('./weights/' + name + '.pkl', 'rb') as f:
+def load_dict(workspace, name):
+    with open('{}/weights/{}.pkl'.format(workspace, name), 'rb') as f:
         return pickle.load(f)
 
-def get_model_features(test_df, feature_type, perm, perm_name, num_frames):
+def get_model_features(workspace, test_df, feature_type, perm, perm_name, num_frames):
 
     # Create the datasets and the dataloaders
     test_dataset = AudioDataset(test_df, feature_type, perm=perm, resize=num_frames)
@@ -73,7 +74,7 @@ def get_model_features(test_df, feature_type, perm, perm_name, num_frames):
 
     cuda = True
     device = torch.device('cuda:0' if cuda else 'cpu')
-    model_name = './model/model_' + feature_type + '_' + perm_name
+    model_name = '{}/model/model_{}_{}'.format(workspace, feature_type, perm_name)
 
     model = Task5Model(10).to(device)
     model.load_state_dict(torch.load(model_name))
@@ -91,25 +92,25 @@ def get_model_features(test_df, feature_type, perm, perm_name, num_frames):
     
     return test_features
 
-def main(perm):
+def main(workspace, perm):
     
     #os.makedirs('../result', exist_ok=True)
     perm_name = str(perm[0]) + str(perm[1]) + str(perm[2])
     folds = []
-    fold_files = sorted(glob('./metadata/split/*.txt'))
+    fold_files = sorted(glob('{}/split/*.txt'.format(workspace)))
     folds = [pd.read_csv(x, delimiter=" ", header=None) for x in fold_files]
     
     print(f'\nEvaluating Fold {perm_name}:')
     print(f'Testing on {perm[-1]}')
     
     test_df = folds[perm[-1]]
-    logmel_out = get_model_features(test_df, 'logmelspec', perm, perm_name, 200)
-    cqt_out = get_model_features(test_df, 'cqt', perm, perm_name, 431)
-    gamma_out = get_model_features(test_df, 'gammatone', perm, perm_name, 496)
+    logmel_out = get_model_features(workspace, test_df, 'logmelspec', perm, perm_name, 200)
+    cqt_out = get_model_features(workspace, test_df, 'cqt', perm, perm_name, 431)
+    gamma_out = get_model_features(workspace, test_df, 'gammatone', perm, perm_name, 496)
     
-    l_weight = np.array(list(load_dict('logmelspec_valid_weights_' + perm_name).values()))
-    c_weight = np.array(list(load_dict('cqt_valid_weights_' + perm_name).values()))
-    g_weight = np.array(list(load_dict('gammatone_valid_weights_' + perm_name).values()))
+    l_weight = np.array(list(load_dict(workspace, 'logmelspec_valid_weights_' + perm_name).values()))
+    c_weight = np.array(list(load_dict(workspace, 'cqt_valid_weights_' + perm_name).values()))
+    g_weight = np.array(list(load_dict(workspace, 'gammatone_valid_weights_' + perm_name).values()))
     
     logmel_out *= l_weight
     cqt_out *= c_weight
@@ -128,8 +129,9 @@ def main(perm):
    
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Feature Combination')
+    parser.add_argument('-w', '--workspace', type=str)
     parser.add_argument('-p', '--permutation', '--arg', nargs='+', type=int, default=[0,1,2,3,4])
     args = parser.parse_args()
     
-    main(args.permutation)
+    main(args.workspace, args.permutation)
 

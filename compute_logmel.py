@@ -11,17 +11,23 @@ import argparse
 num_cores = 4
 
 def compute_melspec(filename, outdir):
-    wav = librosa.load(filename, sr=44100)[0]
-    melspec = librosa.feature.melspectrogram(
-        wav,
-        sr=44100,
-        n_fft=2560,
-        hop_length=694,
-        n_mels=128,
-        fmin=20,
-        fmax=22050)
-    logmel = librosa.core.power_to_db(melspec)
-    np.save(outdir + os.path.basename(filename) + '.npy', logmel)
+    try:
+        wav = librosa.load(filename, sr=44100)[0]
+        melspec = librosa.feature.melspectrogram(
+            wav,
+            sr=44100,
+            n_fft=2560,
+            hop_length=694,
+            n_mels=128,
+            fmin=20,
+            fmax=22050)
+        logmel = librosa.core.power_to_db(melspec)
+#        new_name_ = filename.split('/')[-1].split('-')
+#        new_name = '{}/{}-{}.wav.npy'.format('/'.join(filename.split('/')[:-1]), new_name_[0], new_name_[1].split('_')[0])
+        np.save(outdir + os.path.basename(filename) + '.npy', logmel)
+    except ValueError:
+        print('ERROR IN:', filename)
+    
 
 def main(input_path, output_path):
     file_list = glob(input_path + '/*.wav')

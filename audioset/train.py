@@ -25,7 +25,7 @@ from utils import AudioDataset, Task5Model
 
 from augmentation.SpecTransforms import ResizeSpectrogram, TimeMask, FrequencyMask, RandomCycle
 
-def run(feature_type, num_frames, perm, seed):
+def run(workspace, feature_type, num_frames, perm, seed):
 
     random.seed(seed)
     np.random.seed(seed)
@@ -33,9 +33,11 @@ def run(feature_type, num_frames, perm, seed):
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
     
+    os.makedirs('{}/model'.format(workspace), exist_ok=True)
+    
     folds = []
     for i in range(5):
-        folds.append(pd.read_csv('./metadata/split/fold_{}.txt'.format(i), delimiter=" ", header=None))
+        folds.append(pd.read_csv('{}/split/fold_{}_c.txt'.format(workspace, i), delimiter=" ", header=None))
     
     train_df = pd.concat([folds[perm[0]], folds[perm[1]], folds[perm[2]]])
     valid_df = folds[perm[3]]
@@ -54,17 +56,17 @@ def run(feature_type, num_frames, perm, seed):
     ])
 
     # Create the datasets and the dataloaders
-
-    train_dataset = AudioDataset(train_df, feature_type=feature_type,
+    
+    train_dataset = AudioDataset(workspace, train_df, feature_type=feature_type,
         perm=perm,
         resize = num_frames,
         image_transform = albumentations_transform,
         spec_transform = spec_transforms)
 
-    valid_dataset = AudioDataset(valid_df, feature_type=feature_type, perm=perm, resize = num_frames)
+    valid_dataset = AudioDataset(workspace, valid_df, feature_type=feature_type, perm=perm, resize = num_frames)
 
     val_loader = DataLoader(valid_dataset, 16, shuffle=False, num_workers =2)
-    train_loader = DataLoader(train_dataset, 16, shuffle=True, num_workers = 2)
+    train_loader = DataLoader(train_dataset, 16, shuffle=True, num_workers = 2, drop_last=True)
 
     # Define the device to be used
     cuda = True
@@ -93,7 +95,7 @@ def run(feature_type, num_frames, perm, seed):
 
             inputs = sample['data'].to(device)
             label = sample['labels'].to(device)
-
+            
             optimizer.zero_grad()
             with torch.set_grad_enabled(True):
                 model = model.train()
@@ -121,7 +123,7 @@ def run(feature_type, num_frames, perm, seed):
 
         if this_epoch_valid_loss < lowest_val_loss:
             lowest_val_loss = this_epoch_valid_loss
-            torch.save(model.state_dict(), './model/model_{}_{}'.format(feature_type, str(perm[0])+str(perm[1])+str(perm[2])))
+            torch.save(model.state_dict(), '{}/model/model_{}_{}'.format(workspace, feature_type, str(perm[0])+str(perm[1])+str(perm[2])))
             epochs_without_new_lowest = 0
         else:
             epochs_without_new_lowest += 1
@@ -136,9 +138,10 @@ def run(feature_type, num_frames, perm, seed):
 if __name__=="__main__":
     
     parser = argparse.ArgumentParser(description='Feature type')
+    parser.add_argument('-w', '--workspace', type=str)
     parser.add_argument('-f', '--feature_type', type=str, default='logmelspec')
     parser.add_argument('-n', '--num_frames', type=int, default=200)
     parser.add_argument('-p', '--permutation', type=int, nargs='+', default=[0,1,2,3,4])
     parser.add_argument('-s', '--seed', type=int, default=42)
     args = parser.parse_args()
-    run(args.feature_type, args.num_frames,args.permutation, args.seed)
+    run(args.workspace, args.feature_type, args.num_frames,args.permutation, args.seed)

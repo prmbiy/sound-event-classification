@@ -6,7 +6,7 @@ This repository contains code for various sound event classification systems imp
 Each dataset has its own folder and contains the following subfolders:
 1. augmentation: package which contains code for various data augmentations
 2. data: contains raw audio files and generated features
-3. metadata: contains metadata required to parse the dataset
+3. split: contains metadata required to parse the dataset
 4. models: contains saved weights
 Other than these subfolders, each dataset folder contains a script `statistics.py` to evaluate the channel wise mean and standard deviation for the various features. 
 
@@ -27,24 +27,24 @@ Replace `<feature_type>` with one of `logmelspec`, `cqt`, `gammatone`. The outpu
 Evaluate the channel wise mean and standard deviation for the features using `statistics.py`. 
 #### DCASE
 Only two arguments are required: feature type and number of frequency bins. <br/>
-`python statistics.py -f logmelspec -n 64` <br/>
+`python statistics.py -w $WORKSPACE -f logmelspec -n 128` <br/>
 #### Audioset
 An additional parameter is required to specify the training, validation and testing folds. For training on folds 0, 1 and 2, validating on 3 and testing on 4, run <br/>
-`python statistics.py -f logmelspec -n 64 -p 0 1 2 3 4` <br/>
+`python statistics.py -w $WORKSPACE -f logmelspec -n 128 -p 0 1 2 3 4` <br/>
 ### 3. Parse the data
 To parse the DCASE data, run `parse_dcase.py`. No such step is required for Audioset.
 ### 4. Training
 #### DCASE
 The `train.py` file for DCASE takes in 3 arguments: feature type, number of time frames and random seed. To train logmel, run <br/>
-`python train.py -f logmelspec -n 635 --seed 42` <br/>
+`python train.py -w $WORKSPACE -f logmelspec -n 636 --seed 42` <br/>
 #### Audioset
 Other than the three arguments above, the `train.py` file for Audioset takes in an additional argument to specify the training, validation and testing folds. For training on folds 0, 1 and 2, validating on 3 and testing on 4, run <br/>
-`python train.py -f logmelspec -n 635 -p 0 1 2 3 4` <br/>
+`python train.py -w $WORKSPACE -f logmelspec -n 636 -p 0 1 2 3 4` <br/>
 ### 5. Validating
 For validation, run `evaluate.py` with the same arguments as above but without the random seed argument.
 ### 6. Feature Fusion
 In order to perform feature fusion, refer to section 1 to generate  `logmelspec`, `cqt` and  `gammatone` features and then train their respective models. Next, to generate the weights of each feature, run <br/>
-`python generate_weights.py -p 0 1 2 3 4` <br/>
+`python generate_weights.py -w $WORKSPACE -p 0 1 2 3 4` <br/>
 
 Finally, run <br/>
-`python feature_fusion.py -p 0 1 2 3 4` <br/>
+`python feature_fusion.py -w $WORKSPACE -p 0 1 2 3 4` <br/>

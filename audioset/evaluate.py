@@ -39,11 +39,11 @@ class_mapping['others'] = 9
 
 target_names = ['breaking', 'chatter', 'crying_sobbing', 'emergency_vehicle', 'explosion', 'gunshot_gunfire', 'motor_vehicle_road', 'screaming', 'siren', 'others']
 
-def run(feature_type, num_frames, perm):
+def run(workspace, feature_type, num_frames, perm):
     
     folds = []
     for i in range(5):
-        folds.append(pd.read_csv('./metadata/split/fold_{}.txt'.format(i), delimiter=" ", header=None))
+        folds.append(pd.read_csv('{}/split/fold_{}_c.txt'.format(workspace, i), delimiter=" ", header=None))
 
     train_df = pd.concat([folds[perm[0]], folds[perm[1]], folds[perm[2]]])
     valid_df = folds[perm[3]]
@@ -51,7 +51,7 @@ def run(feature_type, num_frames, perm):
 
     # Create the datasets and the dataloaders
 
-    test_dataset = AudioDataset(test_df, feature_type=feature_type, perm=perm, resize = num_frames)
+    test_dataset = AudioDataset(workspace, test_df, feature_type=feature_type, perm=perm, resize = num_frames)
     test_loader = DataLoader(test_dataset, 16, shuffle=False, num_workers =2)
 
     cuda = True
@@ -60,7 +60,7 @@ def run(feature_type, num_frames, perm):
     
     # Instantiate the model
     model = Task5Model(10).to(device)
-    model.load_state_dict(torch.load('./model/model_{}_{}'.format(feature_type, str(perm[0])+str(perm[1])+str(perm[2]))))
+    model.load_state_dict(torch.load('{}/model/model_{}_{}'.format(workspace, feature_type, str(perm[0])+str(perm[1])+str(perm[2]))))
 
     y_pred = []
     for sample in test_loader:
@@ -85,8 +85,9 @@ def run(feature_type, num_frames, perm):
 if __name__=="__main__":
     
     parser = argparse.ArgumentParser(description='Feature type')
+    parser.add_argument('-w', '--workspace', type=str)
     parser.add_argument('-f', '--feature_type', type=str, default='logmelspec')
     parser.add_argument('-n', '--num_frames', type=int, default=200)
     parser.add_argument('-p', '--permutation', type=int, nargs='+', default = [0,1,2,3,4])
     args = parser.parse_args()
-    run(args.feature_type, args.num_frames,args.permutation)
+    run(args.workspace, args.feature_type, args.num_frames, args.permutation)

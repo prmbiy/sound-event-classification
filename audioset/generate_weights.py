@@ -29,14 +29,14 @@ class_mapping['motor_vehicle_road'] = 6
 class_mapping['screaming'] = 7
 class_mapping['siren'] = 8
 
-def save_dict(obj, name):
-    with open('weights/' + name + '.pkl', 'wb') as f:
+def save_dict(workspace, obj, name):
+    with open('{}/weights/{}.pkl'.format(workspace, name), 'wb') as f:
         pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
 
-def get_auprc(feature_type, num_frames, perm):
+def get_auprc(workspace, feature_type, num_frames, perm):
     perm_name = str(perm[0]) + str(perm[1]) + str(perm[2])
     folds = []
-    fold_files = sorted(glob('./metadata/split/*.txt'))
+    fold_files = sorted(glob('{}/split/*.txt'.format(workspace)))
     folds = [pd.read_csv(x, delimiter=" ", header=None) for x in fold_files]
     
     perm_name = str(perm[0]) + str(perm[1]) + str(perm[2])
@@ -54,7 +54,7 @@ def get_auprc(feature_type, num_frames, perm):
     print('Device: ', device)
     
     model = Task5Model(10).to(device)
-    model_name = './model/model_' + feature_type + '_'  + perm_name
+    model_name = '{}/model/model_{}_{}'.foramt(workspace, feature_type, perm_name)
     model.load_state_dict(torch.load(model_name))
     
     all_preds = []
@@ -87,11 +87,11 @@ def get_auprc(feature_type, num_frames, perm):
 
     return auprc
     
-def main(perm):
-    os.makedirs('weights', exist_ok=True)
-    logmelspec_auprc = get_auprc('logmelspec', 200, perm)
-    cqt_auprc = get_auprc('cqt', 431, perm)
-    gammatone_auprc = get_auprc('gammatone', 496, perm)
+def main(workspace, perm):
+    os.makedirs('{}/weights'.format(workspace), exist_ok=True)
+    logmelspec_auprc = get_auprc(workspace, 'logmelspec', 200, perm)
+    cqt_auprc = get_auprc(workspace, 'cqt', 431, perm)
+    gammatone_auprc = get_auprc(workspace, 'gammatone', 496, perm)
     
     logmelspec_weights = {}
     cqt_weights = {}
@@ -105,13 +105,14 @@ def main(perm):
         gammatone_weights[key] = score_3/total
         key += 1
     
-    save_dict(logmelspec_weights, 'logmelspec_valid_weights_' + perm_name)
-    save_dict(cqt_weights, 'cqt_valid_weights_' + perm_name)
-    save_dict(gammatone_weights, 'gammatone_valid_weights_' + perm_name)
+    save_dict(workspace, logmelspec_weights, 'logmelspec_valid_weights_' + perm_name)
+    save_dict(workspace, cqt_weights, 'cqt_valid_weights_' + perm_name)
+    save_dict(workspace, gammatone_weights, 'gammatone_valid_weights_' + perm_name)
         
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Get AUPRC Weights')
+    parser.add_argument('-w', '--workspace', type=str)
     parser.add_argument('-p', '--permutation', '--arg', nargs='+', type=int, default=[0,1,2,3,4])
     args = parser.parse_args()
     
-    main(args.permutation)
+    main(args.workspace, args.permutation)
