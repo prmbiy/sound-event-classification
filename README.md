@@ -49,6 +49,6 @@ In order to perform feature fusion, refer to section 1 to generate  `logmelspec`
 Finally, run <br/>
 `python feature_fusion.py -w $WORKSPACE -p 0 1 2 3 4` <br/>
 
-### 6. Audioset subset results
+### 7. Audioset subset results
 ![image](https://user-images.githubusercontent.com/25906470/145518047-e6762918-b56c-4ba2-8ed6-56dae87b0cf8.png)
 
