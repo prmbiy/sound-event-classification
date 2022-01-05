@@ -33,17 +33,19 @@ class Task5Model(nn.Module):
         x = self.bw2col(x)
         x = self.mv2.features(x)
         x = x.max(dim=-1)[0].max(dim=-1)[0]
+        print(x.shape)
         x = self.final(x)
+        print(x.shape)
         return x
 
 class AudioDataset(Dataset):
 
     def __init__(self, df, feature_type="logmelspec", spec_transform=None, image_transform=None, resize=None):
-        
+
         self.df = df
         self.feature_type = feature_type
         self.filenames = list(set(df.index.tolist()))
-        
+
         self.spec_transform = spec_transform
         self.image_transform = image_transform
         self.resize = ResizeSpectrogram(frames=resize)
@@ -59,12 +61,12 @@ class AudioDataset(Dataset):
         return len(self.filenames)
 
     def __getitem__(self, idx):
-        
+
         file_name = self.filenames[idx]
         labels = self.df.loc[file_name].to_numpy()
 
         sample = np.load('./data/' + self.feature_type + '/' + file_name + '.npy')
-        
+
         if self.resize:
             sample = self.resize(sample)
 
@@ -75,7 +77,7 @@ class AudioDataset(Dataset):
             sample = self.spec_transform(sample)
 
         sample = sample.transpose(0,1)
-        
+
         if self.image_transform:
             # min-max transformation
             this_min = sample.min()
@@ -100,12 +102,12 @@ class AudioDataset(Dataset):
 
             # revert min-max transformation
             sample = (sample * (this_max - this_min)) + this_min
-        
+
         if len(sample.shape)<3:
             sample = torch.unsqueeze(sample, 0)
-        
+
         labels = torch.FloatTensor(labels)
-        
+
         data = {}
         data['data'], data['labels'], data['file_name'] = sample, labels, file_name
         return data
