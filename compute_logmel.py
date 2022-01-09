@@ -54,18 +54,20 @@ def compute_melspec(filename, outdir):
 #         print('ERROR IN:', filename)
 
 
-def main(input_path, output_path, sample_duration):
+def main(input_path, output_path):
+    #, sample_duration):
     file_list = glob(input_path + '/*.wav')
     os.makedirs(output_path, exist_ok=True)
     _ = Parallel(n_jobs=num_cores)(
-            delayed(lambda x: compute_melspec(x, output_path + '/', sample_duration))(x)
+            delayed(lambda x: compute_melspec(x, output_path + '/'))(x)
             for x in tqdm(file_list))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Input and Output Paths')
     parser.add_argument('input_path', type=str, help="Specifies directory of audio files.")
     parser.add_argument('output_path', type=str, help="Specifies directory for generated spectrograms.")
-    parser.add_argument('--sample_duration', type=int, default = -1, help="Specifies the length of audio sub-samples from the full audio.")
+    #parser.add_argument('--sample_duration', type=int, default = -1, help="Specifies the length of audio sub-samples from the full audio.")
     args = parser.parse_args()
 
-    main(args.input_path, args.output_path, args.__getattr__('sample_duration'))
+    main(args.input_path, args.output_path)
+            #, args.__getattr__('sample_duration'))

@@ -33,9 +33,9 @@ class Task5Model(nn.Module):
         x = self.bw2col(x)
         x = self.mv2.features(x)
         x = x.max(dim=-1)[0].max(dim=-1)[0]
-        print(x.shape) # added debugging print
+        print('b', x.shape) # added debugging print
         x = self.final(x)
-        print(x.shape) # added debugging print
+        print('a', x.shape) # added debugging print
         return x
 
 class AudioDataset(Dataset):

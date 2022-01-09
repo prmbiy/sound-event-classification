@@ -52,7 +52,8 @@ def run(feature_type, num_frames):
         validate_files,
         index=output_df.index)
 
-    output_df.to_csv('./models/pred_eval_testing_3s.csv', index=False)
+    #output_df.to_csv('./models/pred_eval_testing_3s.csv', index=False)
+    output_df.to_csv('./models/pred.csv', index=False)
 
     mode = "coarse"
     df_dict = evaluate('./models/pred.csv',
