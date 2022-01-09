@@ -10,30 +10,48 @@ import argparse
 
 num_cores = -1
 
-def compute_melspec(filename, outdir, sample_duration=-1):
+def compute_melspec(filename, outdir):
     try:
-        sr = 44100
-        wav = librosa.load(filename, sr=sr)[0]
-        audio_len_s = librosa.get_duration(wav, sr=sr)
-        if sample_duration == -1:
-            sample_duration = audio_len_s
-
-        samples = int(sample_duration*sr)
-        for i in range(int(audio_len_s//sample_duration)):
-            melspec = librosa.feature.melspectrogram(
-                wav[i*samples: (i+1)*samples],
-                sr=sr,
-                n_fft=2560,
-                hop_length=694,
-                n_mels=128,
-                fmin=20,
-                fmax=22050)
-            logmel = librosa.core.power_to_db(melspec)
-            # new_name_ = filename.split('/')[-1].split('-')
-            # new_name = '{}/{}-{}.wav.npy'.format('/'.join(filename.split('/')[:-1]), new_name_[0], new_name_[1].split('_')[0])
-            np.save(outdir + os.path.basename(filename) + f'.{i+1}.npy', logmel)
+        wav = librosa.load(filename, sr=44100)[0]
+        melspec = librosa.feature.melspectrogram(
+            wav,
+            sr=44100,
+            n_fft=2560,
+            hop_length=694,
+            n_mels=128,
+            fmin=20,
+            fmax=22050)
+        logmel = librosa.core.power_to_db(melspec)
+#        new_name_ = filename.split('/')[-1].split('-')
+#        new_name = '{}/{}-{}.wav.npy'.format('/'.join(filename.split('/')[:-1]), new_name_[0], new_name_[1].split('_')[0])
+        np.save(outdir + os.path.basename(filename) + '.npy', logmel)
     except ValueError:
         print('ERROR IN:', filename)
+
+# def compute_melspec(filename, outdir, sample_duration=-1):
+#     try:
+#         sr = 44100
+#         wav = librosa.load(filename, sr=sr)[0]
+#         audio_len_s = librosa.get_duration(wav, sr=sr)
+#         if sample_duration == -1:
+#             sample_duration = audio_len_s
+
+#         samples = int(sample_duration*sr)
+#         for i in range(int(audio_len_s//sample_duration)):
+#             melspec = librosa.feature.melspectrogram(
+#                 wav[i*samples: (i+1)*samples],
+#                 sr=sr,
+#                 n_fft=2560,
+#                 hop_length=694,
+#                 n_mels=128,
+#                 fmin=20,
+#                 fmax=22050)
+#             logmel = librosa.core.power_to_db(melspec)
+#             # new_name_ = filename.split('/')[-1].split('-')
+#             # new_name = '{}/{}-{}.wav.npy'.format('/'.join(filename.split('/')[:-1]), new_name_[0], new_name_[1].split('_')[0])
+#             np.save(outdir + os.path.basename(filename) + f'.{i+1}.npy', logmel)
+#     except ValueError:
+#         print('ERROR IN:', filename)
 
 
 def main(input_path, output_path, sample_duration):
