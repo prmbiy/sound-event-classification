@@ -40,11 +40,12 @@ class Task5Model(nn.Module):
 
 class AudioDataset(Dataset):
 
-    def __init__(self, df, feature_type="logmelspec", spec_transform=None, image_transform=None, resize=None):
+    def __init__(self, df, feature_type="logmelspec", spec_transform=None, image_transform=None, resize=None, data_type='train'):
 
         self.df = df
         self.feature_type = feature_type
         self.filenames = list(set(df.index.tolist()))
+        self.data_type = data_type
 
         self.spec_transform = spec_transform
         self.image_transform = image_transform
@@ -65,7 +66,7 @@ class AudioDataset(Dataset):
         file_name = self.filenames[idx]
         labels = self.df.loc[file_name].to_numpy()
 
-        sample = np.load('./data/' + self.feature_type + '/' + file_name + '.1.npy') # adding .1.npy to test validation audio with 3s length
+        sample = np.load('./data/' + self.feature_type + f'/{self.data_type}/' + file_name + '.npy') # adding .1.npy to test validation audio with 3s length
 
         if self.resize:
             sample = self.resize(sample)
