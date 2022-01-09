@@ -39,12 +39,12 @@ def run(feature_type, num_frames, seed):
     ])
 
     spec_transforms = transforms.Compose([
-        TimeMask(), 
-        FrequencyMask(), 
+        TimeMask(),
+        FrequencyMask(),
     ])
 
-    train_dataset = AudioDataset(train_df, feature_type=feature_type, spec_transform=spec_transforms, image_transform=albumentations_transform, resize=num_frames)
-    valid_dataset = AudioDataset(valid_df, feature_type=feature_type, resize=num_frames)
+    train_dataset = AudioDataset(train_df, feature_type=feature_type, spec_transform=spec_transforms, image_transform=albumentations_transform, resize=num_frames, data_type='train')
+    valid_dataset = AudioDataset(valid_df, feature_type=feature_type, resize=num_frames, data_type='validate')
 
     val_loader = DataLoader(valid_dataset, 8, shuffle=False)
     train_loader = DataLoader(train_dataset, 8, shuffle=True)
@@ -85,9 +85,9 @@ def run(feature_type, num_frames, seed):
                 outputs = model(data)
                 # calculate loss for each set of annotations
                 # loss = criterion(outputs, labels)
-                loss_0 = criterion(outputs, labels[:, 0, :]) 
-                loss_1 = criterion(outputs, labels[:, 1, :]) 
-                loss_2 = criterion(outputs, labels[:, 2, :]) 
+                loss_0 = criterion(outputs, labels[:, 0, :])
+                loss_1 = criterion(outputs, labels[:, 1, :])
+                loss_2 = criterion(outputs, labels[:, 2, :])
                 loss = (loss_0.sum() + loss_1.sum() + loss_2.sum())/3
                 loss.backward()
                 optimizer.step()
@@ -101,9 +101,9 @@ def run(feature_type, num_frames, seed):
                 model = model.eval()
                 outputs = model(data)
                 # loss = criterion(outputs, labels)
-                loss_0 = criterion(outputs, labels[:, 0, :]) 
-                loss_1 = criterion(outputs, labels[:, 1, :]) 
-                loss_2 = criterion(outputs, labels[:, 2, :]) 
+                loss_0 = criterion(outputs, labels[:, 0, :])
+                loss_1 = criterion(outputs, labels[:, 1, :])
+                loss_2 = criterion(outputs, labels[:, 2, :])
                 loss = (loss_0.sum() + loss_1.sum() + loss_2.sum())/3
                 this_epoch_valid_loss += loss.detach().cpu().numpy()
 
@@ -128,7 +128,7 @@ def run(feature_type, num_frames, seed):
         scheduler.step(this_epoch_valid_loss)
 
 if __name__=="__main__":
-    
+
     parser = argparse.ArgumentParser(description='Feature type')
     parser.add_argument('-f', '--feature_type', type=str, default='logmelspec')
     parser.add_argument('-n', '--num_frames', type=int, default=635)

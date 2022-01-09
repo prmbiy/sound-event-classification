@@ -19,7 +19,7 @@ def run(feature_type, num_frames):
     validate_files = []
     valid_df = metadata["coarse_test"]
 
-    valid_dataset = AudioDataset(valid_df, 'logmelspec', resize=num_frames)
+    valid_dataset = AudioDataset(valid_df, 'logmelspec', resize=num_frames, data_type='validate')
     valid_loader = DataLoader(valid_dataset, 8, shuffle=False)
 
     cuda = True
