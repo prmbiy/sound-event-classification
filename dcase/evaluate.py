@@ -52,7 +52,7 @@ def run(feature_type, num_frames):
         validate_files,
         index=output_df.index)
 
-    output_df.to_csv('./models/pred.csv', index=False)
+    output_df.to_csv('./models/pred_eval_testing_3s.csv', index=False)
 
     mode = "coarse"
     df_dict = evaluate('./models/pred.csv',
@@ -70,12 +70,12 @@ def run(feature_type, num_frames):
     print(" * Micro F1-score (@0.5): {}".format(eval_df["F"][thresh_0pt5_idx]))
     print(" * Macro AUPRC:           {}".format(macro_auprc))
     print(" * Coarse Tag AUPRC:")
-    
+
     for coarse_id, auprc in class_auprc.items():
         print("      - {}: {}".format(coarse_id, auprc))
 
 if __name__=="__main__":
-    
+
     parser = argparse.ArgumentParser(description='Feature type')
     parser.add_argument('-f', '--feature_type', type=str, default='logmelspec')
     parser.add_argument('-n', '--num_frames', type=int, default=635)

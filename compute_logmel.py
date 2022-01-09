@@ -29,8 +29,8 @@ def compute_melspec(filename, outdir, sample_duration=-1):
                 fmin=20,
                 fmax=22050)
             logmel = librosa.core.power_to_db(melspec)
-        #    new_name_ = filename.split('/')[-1].split('-')
-        #    new_name = '{}/{}-{}.wav.npy'.format('/'.join(filename.split('/')[:-1]), new_name_[0], new_name_[1].split('_')[0])
+            # new_name_ = filename.split('/')[-1].split('-')
+            # new_name = '{}/{}-{}.wav.npy'.format('/'.join(filename.split('/')[:-1]), new_name_[0], new_name_[1].split('_')[0])
             np.save(outdir + os.path.basename(filename) + f'.{i+1}.npy', logmel)
     except ValueError:
         print('ERROR IN:', filename)

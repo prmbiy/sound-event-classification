@@ -33,9 +33,9 @@ class Task5Model(nn.Module):
         x = self.bw2col(x)
         x = self.mv2.features(x)
         x = x.max(dim=-1)[0].max(dim=-1)[0]
-        print(x.shape)
+        print(x.shape) # added debugging print
         x = self.final(x)
-        print(x.shape)
+        print(x.shape) # added debugging print
         return x
 
 class AudioDataset(Dataset):
@@ -65,7 +65,7 @@ class AudioDataset(Dataset):
         file_name = self.filenames[idx]
         labels = self.df.loc[file_name].to_numpy()
 
-        sample = np.load('./data/' + self.feature_type + '/' + file_name + '.npy')
+        sample = np.load('./data/' + self.feature_type + '/' + file_name + '.1.npy') # adding .1.npy to test validation audio with 3s length
 
         if self.resize:
             sample = self.resize(sample)
