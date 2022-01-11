@@ -82,10 +82,10 @@ def run(feature_type, num_frames, seed):
             optimizer.zero_grad()
             with torch.set_grad_enabled(True):
                 model = model.train()
-                outputs = model(data)
+                outputs = model(data) # (batch_size, 8)
                 # calculate loss for each set of annotations
                 # loss = criterion(outputs, labels)
-                loss_0 = criterion(outputs, labels[:, 0, :])
+                loss_0 = criterion(outputs, labels[:, 0, :]) # first index corresponds to batch size
                 loss_1 = criterion(outputs, labels[:, 1, :])
                 loss_2 = criterion(outputs, labels[:, 2, :])
                 loss = (loss_0.sum() + loss_1.sum() + loss_2.sum())/3
