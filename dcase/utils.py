@@ -15,9 +15,8 @@ random_erasing = RandomErasing()
 class Task5Model(nn.Module):
 
     def __init__(self, num_classes):
-
+        
         super().__init__()
-
         self.bw2col = nn.Sequential(
             nn.BatchNorm2d(1),
             nn.Conv2d(1, 10, 1, padding=0), nn.ReLU(),
@@ -33,9 +32,7 @@ class Task5Model(nn.Module):
         x = self.bw2col(x)
         x = self.mv2.features(x)
         x = x.max(dim=-1)[0].max(dim=-1)[0]
-        print('b', x.shape) # added debugging print
         x = self.final(x)
-        print('a', x.shape) # added debugging print
         return x
 
 class AudioDataset(Dataset):
@@ -70,6 +67,10 @@ class AudioDataset(Dataset):
 
         if self.resize:
             sample = self.resize(sample)
+            # this is going to resize to our desired spectrogram size! Hence even a 2/3s audio segment
+            # which will have spectrogram size (128, 191) will be padded with zeros to obtain spectrogram
+            # corresponding to 10s audio file - (128, 191 ) + zero_columns -> (128, 636)
+            # the zero regions in the spectrogram should be interpreted as silent regions
 
         sample = (sample-self.channel_means)/self.channel_stds
         sample = torch.Tensor(sample)
@@ -77,33 +78,32 @@ class AudioDataset(Dataset):
         if self.spec_transform:
             sample = self.spec_transform(sample)
 
-        sample = sample.transpose(0,1)
-
+#         sample = sample.transpose(0,1)
+        
         if self.image_transform:
             # min-max transformation
             this_min = sample.min()
             this_max = sample.max()
             sample = (sample - this_min) / (this_max - this_min)
-
+            
             # randomly cycle the file
             i = np.random.randint(sample.shape[1])
             sample = torch.cat([
                 sample[:, i:, :],
                 sample[:, :i, :]],
                 dim=1)
-
             # apply albumentations transforms
             sample = np.array(self.pil(sample))
             sample = self.image_transform(image=sample)
             sample = sample['image']
             sample = sample[None, :, :].permute(0, 2, 1)
-
+            
             # apply random erasing
             sample = random_erasing(sample.clone().detach())
-
+            
             # revert min-max transformation
             sample = (sample * (this_max - this_min)) + this_min
-
+            
         if len(sample.shape)<3:
             sample = torch.unsqueeze(sample, 0)
 
