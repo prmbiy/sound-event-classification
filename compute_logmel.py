@@ -10,12 +10,15 @@ import argparse
 
 num_cores = -1
 
-def compute_melspec(filename, outdir):
+def compute_melspec(filename, outdir, audio_segment_length):
     try:
-        wav = librosa.load(filename, sr=44100)[0]
+        sr = 44100
+        wav = librosa.load(filename, sr=sr)[0]
+        if(audio_segment_length!=-1 and audio_segment_length!=0):
+            wav = wav [:sr*audio_segment_length]
         melspec = librosa.feature.melspectrogram(
             wav,
-            sr=44100,
+            sr=sr,
             n_fft=2560,
             hop_length=694,
             n_mels=128,
@@ -54,20 +57,20 @@ def compute_melspec(filename, outdir):
 #         print('ERROR IN:', filename)
 
 
-def main(input_path, output_path):
+def main(input_path, output_path, audio_segment_length):
     #, sample_duration):
     file_list = glob(input_path + '/*.wav')
     os.makedirs(output_path, exist_ok=True)
     _ = Parallel(n_jobs=num_cores)(
-            delayed(lambda x: compute_melspec(x, output_path + '/'))(x)
+            delayed(lambda x: compute_melspec(x, output_path + '/', audio_segment_length))(x)
             for x in tqdm(file_list))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Input and Output Paths')
     parser.add_argument('input_path', type=str, help="Specifies directory of audio files.")
     parser.add_argument('output_path', type=str, help="Specifies directory for generated spectrograms.")
-    #parser.add_argument('--sample_duration', type=int, default = -1, help="Specifies the length of audio sub-samples from the full audio.")
+    parser.add_argument('-a', '--audio_segment_length', type=int, help="Specifies length of audio segment to extract from each audio file. Default -1(Consider full length audio).", default=-1)
     args = parser.parse_args()
 
-    main(args.input_path, args.output_path)
+    main(args.input_path, args.output_path, args.audio_segment_length)
             #, args.__getattr__('sample_duration'))
