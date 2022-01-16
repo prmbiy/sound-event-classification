@@ -21,6 +21,7 @@ from augmentation.SpecTransforms import ResizeSpectrogram
 
 num_frames = 636
 feature_type = "logmelspec"
+threshold = 0.5
 
 channel_means = np.load('./data/statistics/channel_means_{}.npy'.format(feature_type)).reshape(1,-1,1)
 channel_stds = np.load('./data/statistics/channel_stds_{}.npy'.format(feature_type)).reshape(1,-1,1)
@@ -38,12 +39,12 @@ num_cores = -1
 
 labels = ['1_engine', '2_machinery-impact', '3_non-machinery-impact',
             '4_powered-saw', '5_alert-signal', '6_music', '7_human-voice', '8_dog']
+final_outputs = [False] * len(labels)
 
 def compute_melspectr(filename, outdir, audio_segment_length):
 
     sr = 44100
     wav = librosa.load(filename, sr=sr)[0]
-    preds = []
     scores = []
     frame_number = []
     
@@ -79,10 +80,10 @@ def compute_melspectr(filename, outdir, audio_segment_length):
                 for j in range(outputs.shape[0]):
                     scores.append(outputs[j,:].detach().cpu().numpy())
                 outputs = outputs[0].detach().cpu().numpy()
+                print('outputs', outputs)
                 frame_number.append(n)
-                pred = labels[np.argmax(outputs)]
-                preds.append(pred)
-
+                for i, val in enumerate(outputs):
+                    final_outputs[i] = final_outputs[i] or val>threshold
             start = start + sr
             n = n+1
         
@@ -105,8 +106,8 @@ def compute_melspectr(filename, outdir, audio_segment_length):
         output_df.to_csv(f"./models/{outdir}pred.csv", index=False)
         print(f"Predictions saved in './models/{outdir}pred.csv'.")
 
-        final_prediction = max(set(preds), key = preds.count)
-        print(filename + " " + final_prediction)
+        final_prediction = [labels[i] if val else "" for i, val in enumerate(final_outputs)]
+        print(filename, final_prediction, final_outputs)
 
         
     except ValueError:
