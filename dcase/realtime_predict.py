@@ -8,6 +8,7 @@ from augmentation.SpecTransforms import ResizeSpectrogram
 
 num_frames = 636
 feature_type = "logmelspec"
+threshold = 0.1
 resize = ResizeSpectrogram(frames=num_frames)
 channel_means = np.load('./data/statistics/channel_means_{}.npy'.format(feature_type)).reshape(1,-1,1)
 channel_stds = np.load('./data/statistics/channel_stds_{}.npy'.format(feature_type)).reshape(1,-1,1)
@@ -93,7 +94,7 @@ while length_recorded < full_recording_length:
         outputs = torch.sigmoid(outputs)[0].detach().cpu().numpy()
         print(length_recorded, outputs)
         for i, val in enumerate(outputs):
-            final_outputs[i] = final_outputs[i] or val>0.1
+            final_outputs[i] = final_outputs[i] or val>threshold
 # ctr = 1
 # data = wf.readframes(chunk)
 # while data:
