@@ -1,7 +1,7 @@
 import numpy as np
 from tqdm import tqdm
 import pickle
-from glob import glob
+import os
 import argparse
 from config import feature_type, num_bins, sample_rate
 from utils import dataSampleRateString
@@ -31,8 +31,10 @@ def run(feature_type, num_bins):
     variance = M2/(n - 1)
     stdev = np.sqrt(variance)
 
-    np.save('./data/statistics/{}/channel_means_{}'.format(data_folder, feature_type), mean)
-    np.save('./data/statistics/{}/channel_stds_{}'.format(data_folder, feature_type), stdev)
+    folder = f'./data/statistics/{data_folder}'
+    os.makedirs(folder, exist_ok = True)
+    np.save(f'{folder}/channel_means_{feature_type}', mean)
+    np.save(f'{folder}/channel_stds_{feature_type}', stdev)
 
 if __name__=="__main__":
 
