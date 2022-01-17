@@ -6,4 +6,5 @@ dcase/data/cqt/*
 dcase/data/gammatone/*
 dcase/data/train/*
 dcase/data/validate/*
+dcase/test.wav
 __pycache__/

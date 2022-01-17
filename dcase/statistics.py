@@ -4,7 +4,7 @@ import pickle
 import os
 import argparse
 from config import feature_type, num_bins, sample_rate
-from utils import dataSampleRateString
+from utils import dataSampleRateString, getSampleRateString
 def run(feature_type, num_bins):
 
     # Load and prepare data
@@ -31,7 +31,7 @@ def run(feature_type, num_bins):
     variance = M2/(n - 1)
     stdev = np.sqrt(variance)
 
-    folder = f'./data/statistics/{data_folder}'
+    folder = f'./data/statistics/{getSampleRateString(sample_rate)}'
     os.makedirs(folder, exist_ok = True)
     np.save(f'{folder}/channel_means_{feature_type}', mean)
     np.save(f'{folder}/channel_stds_{feature_type}', stdev)

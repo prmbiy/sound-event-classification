@@ -1,13 +1,12 @@
 import pickle
 import numpy as np
 import pandas as pd
-from dcase.utils import getSampleRateString
 from metrics import evaluate, micro_averaged_auprc, macro_averaged_auprc
 from config import batch_size, labels, num_classes, sample_rate, feature_type, num_frames
 
 import torch
 from torch.utils.data import DataLoader
-from utils import Task5Model, AudioDataset, configureTorchDevice,dataSampleRateString
+from utils import Task5Model, AudioDataset, configureTorchDevice, dataSampleRateString, getSampleRateString
 
 import argparse
 

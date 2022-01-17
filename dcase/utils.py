@@ -9,7 +9,8 @@ from torchvision import transforms
 
 from augmentation.SpecTransforms import ResizeSpectrogram
 from augmentation.RandomErasing import RandomErasing
-
+from utils import getSampleRateString
+from config import sample_rate
 random_erasing = RandomErasing()
 
 
@@ -46,16 +47,18 @@ class AudioDataset(Dataset):
         self.filenames = list(set(df.index.tolist()))
         self.mode = mode
         self.input_folder = input_folder
+        
 
         self.spec_transform = spec_transform
         self.image_transform = image_transform
         self.resize = ResizeSpectrogram(frames=resize)
         self.pil = transforms.ToPILImage()
 
+        statistics_folder = getSampleRateString(sample_rate)
         self.channel_means = np.load(
-            './data/statistics/{}/channel_means_{}'.format(input_folder, feature_type))
+            './data/statistics/{}/channel_means_{}'.format(statistics_folder, feature_type))
         self.channel_stds = np.load(
-            './data/statistics/{}/channel_stds_{}'.format(input_folder, feature_type))
+            './data/statistics/{}/channel_stds_{}'.format(statistics_folder, feature_type))
 
         self.channel_means = self.channel_means.reshape(1, -1, 1)
         self.channel_stds = self.channel_stds.reshape(1, -1, 1)
