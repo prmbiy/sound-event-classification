@@ -9,7 +9,6 @@ from torchvision import transforms
 
 from augmentation.SpecTransforms import ResizeSpectrogram
 from augmentation.RandomErasing import RandomErasing
-from utils import getSampleRateString
 from config import sample_rate
 random_erasing = RandomErasing()
 
