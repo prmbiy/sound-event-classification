@@ -7,58 +7,27 @@ from joblib import Parallel, delayed
 from glob import glob
 from tqdm import tqdm
 import argparse
-
-num_cores = -1
+from config_global import n_fft, hop_length, n_mels, fmin, fmax, sample_rate, num_cores
 
 def compute_melspec(filename, outdir, audio_segment_length):
     try:
-        sr = 44100
-        wav = librosa.load(filename, sr=sr)[0]
+        wav = librosa.load(filename, sr=sample_rate)[0]
         if(audio_segment_length!=-1 and audio_segment_length!=0):
-            wav = wav [:sr*audio_segment_length]
+            wav = wav [:sample_rate*audio_segment_length]
         melspec = librosa.feature.melspectrogram(
             wav,
-            sr=sr,
-            n_fft=2560,
-            hop_length=694,
-            n_mels=128,
-            fmin=20,
-            fmax=22050)
+            sr=sample_rate,
+            n_fft=n_fft,
+            hop_length=hop_length,
+            n_mels=n_mels,
+            fmin=fmin,
+            fmax=fmax)
         logmel = librosa.core.power_to_db(melspec)
-#        new_name_ = filename.split('/')[-1].split('-')
-#        new_name = '{}/{}-{}.wav.npy'.format('/'.join(filename.split('/')[:-1]), new_name_[0], new_name_[1].split('_')[0])
         np.save(outdir + os.path.basename(filename) + '.npy', logmel)
     except ValueError:
         print('ERROR IN:', filename)
 
-# def compute_melspec(filename, outdir, sample_duration=-1):
-#     try:
-#         sr = 44100
-#         wav = librosa.load(filename, sr=sr)[0]
-#         audio_len_s = librosa.get_duration(wav, sr=sr)
-#         if sample_duration == -1:
-#             sample_duration = audio_len_s
-
-#         samples = int(sample_duration*sr)
-#         for i in range(int(audio_len_s//sample_duration)):
-#             melspec = librosa.feature.melspectrogram(
-#                 wav[i*samples: (i+1)*samples],
-#                 sr=sr,
-#                 n_fft=2560,
-#                 hop_length=694,
-#                 n_mels=128,
-#                 fmin=20,
-#                 fmax=22050)
-#             logmel = librosa.core.power_to_db(melspec)
-#             # new_name_ = filename.split('/')[-1].split('-')
-#             # new_name = '{}/{}-{}.wav.npy'.format('/'.join(filename.split('/')[:-1]), new_name_[0], new_name_[1].split('_')[0])
-#             np.save(outdir + os.path.basename(filename) + f'.{i+1}.npy', logmel)
-#     except ValueError:
-#         print('ERROR IN:', filename)
-
-
 def main(input_path, output_path, audio_segment_length):
-    #, sample_duration):
     file_list = glob(input_path + '/*.wav')
     os.makedirs(output_path, exist_ok=True)
     _ = Parallel(n_jobs=num_cores)(
@@ -73,4 +42,3 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     main(args.input_path, args.output_path, args.audio_segment_length)
-            #, args.__getattr__('sample_duration'))

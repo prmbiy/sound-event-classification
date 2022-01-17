@@ -5,8 +5,8 @@ import os
 
 import torch
 from torch.utils.data import DataLoader
-from utils import Task5Model, AudioDataset
-
+from utils import Task5Model, AudioDataset, enableGpuIfExists
+from config import cuda, batch_size, num_classes
 import argparse
 
 def run(feature_type, num_frames, input_folder):
@@ -17,13 +17,11 @@ def run(feature_type, num_frames, input_folder):
     predict_files = []
 
     predict_dataset = AudioDataset(predict_df, 'logmelspec', resize=num_frames, data_type='predict', input_folder=input_folder)
-    predict_loader = DataLoader(predict_dataset, 8, shuffle=False)
+    predict_loader = DataLoader(predict_dataset, batch_size, shuffle=False)
 
-    cuda = True
-    device = torch.device('cuda:0' if cuda else 'cpu')
-    print('Device: ', device)
+    device = enableGpuIfExists(cuda)
 
-    model = Task5Model(8).to(device)
+    model = Task5Model(num_classes).to(device)
     model.load_state_dict(torch.load('./models/model_{}'.format(feature_type)))
 
     preds = []

@@ -127,6 +127,7 @@ def localfile(args):
     wf = wave.open(filename, "rb")
     fs = wf.getframerate()
     channels = wf.getnchannels()
+    sample_width = wf.getsampwidth()
     audio_segment_length = args.audio_segment_length
     chunk = 44100
     sr = 44100
@@ -144,12 +145,12 @@ def localfile(args):
         audio_segment = bytearray(frames[0])
         for i in range(audio_segment_length-1):
             audio_segment = audio_segment + bytearray(frames[i+1])
-        wf = wave.open(temp_filename, 'wb')
-        wf.setnchannels(channels)
-        wf.setsampwidth(wf.getsampwidth())
-        wf.setframerate(fs)
-        wf.writeframes(data)
-        wf.close()
+        wf1 = wave.open(temp_filename, 'wb')
+        wf1.setnchannels(channels)
+        wf1.setsampwidth(sample_width)
+        wf1.setframerate(fs)
+        wf1.writeframes(data)
+        wf1.close()
         wav = librosa.load(temp_filename, sr=44100)[0]
         melspec = librosa.feature.melspectrogram(
                 wav,
@@ -177,6 +178,7 @@ def localfile(args):
     final_prediction = [labels[i] if val else "" for i,
                         val in enumerate(final_outputs)]
     print('final_prediction', final_prediction)
+    wf.close()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

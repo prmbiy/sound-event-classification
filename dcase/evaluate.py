@@ -1,33 +1,32 @@
 import pickle
 import numpy as np
 import pandas as pd
+from dcase.utils import getSampleRateString
 from metrics import evaluate, micro_averaged_auprc, macro_averaged_auprc
+from config import batch_size, labels, num_classes, sample_rate, feature_type, num_frames
 
 import torch
-from torch.utils.data import Dataset, DataLoader
-from albumentations import Compose
-from albumentations.pytorch import ToTensor
-from utils import Task5Model, AudioDataset
+from torch.utils.data import DataLoader
+from utils import Task5Model, AudioDataset, configureTorchDevice,dataSampleRateString
 
 import argparse
 
 with open('./metadata/metadata.pkl', 'rb') as f:
     metadata = pickle.load(f)
 
-def run(feature_type, num_frames):
+def run(feature_type, num_frames, sample_rate):
 
     validate_files = []
     valid_df = metadata["coarse_test"]
 
-    valid_dataset = AudioDataset(valid_df, 'logmelspec', resize=num_frames, data_type='validate')
-    valid_loader = DataLoader(valid_dataset, 8, shuffle=False)
+    valid_dataset = AudioDataset(valid_df, feature_type, resize=num_frames, mode='validate', input_folder=dataSampleRateString('validate', sample_rate))
+    valid_loader = DataLoader(valid_dataset, batch_size, shuffle=False)
 
-    cuda = True
-    device = torch.device('cuda:0' if cuda else 'cpu')
-    print('Device: ', device)
+    device = configureTorchDevice()
 
-    model = Task5Model(8).to(device)
-    model.load_state_dict(torch.load('./models/model_{}'.format(feature_type)))
+    model = Task5Model(num_classes).to(device)
+    folder_name = f'./models/{getSampleRateString(sample_rate)}'
+    model.load_state_dict(torch.load(f'{folder_name}/model_{feature_type}')
 
     preds = []
     for sample in valid_loader:
@@ -44,19 +43,16 @@ def run(feature_type, num_frames):
 
     preds = np.array(preds)
     output_df = pd.DataFrame(
-        preds, columns=[
-            '1_engine', '2_machinery-impact', '3_non-machinery-impact',
-            '4_powered-saw', '5_alert-signal', '6_music', '7_human-voice', '8_dog'])
+        preds, columns=labels)
 
     output_df['audio_filename'] = pd.Series(
         validate_files,
         index=output_df.index)
 
-    #output_df.to_csv('./models/pred_eval_testing_3s.csv', index=False)
-    output_df.to_csv('./models/pred.csv', index=False)
+    output_df.to_csv(f'{folder_name}/pred.csv', index=False)
 
     mode = "coarse"
-    df_dict = evaluate('./models/pred.csv',
+    df_dict = evaluate(f'{folder_name}/pred.csv',
                        './metadata/annotations-dev.csv',
                        './metadata/dcase-ust-taxonomy.yaml',
                        "coarse")
@@ -78,7 +74,10 @@ def run(feature_type, num_frames):
 if __name__=="__main__":
 
     parser = argparse.ArgumentParser(description='Feature type')
-    parser.add_argument('-f', '--feature_type', type=str, default='logmelspec')
-    parser.add_argument('-n', '--num_frames', type=int, default=635)
+    parser.add_argument('-f', '--feature_type', type=str, default=feature_type)
+    parser.add_argument('-n', '--num_frames', type=int, default=num_frames)
+    parser.add_argument('--seed', type=int, default=42)
+    parser.add_argument('-sr', '--sample_rate', type=int,
+                        default=sample_rate, choices=[8000, 16000])
     args = parser.parse_args()
-    run(args.feature_type, args.num_frames)
+    run(args.feature_type, args.num_frames, args.sample_rate)

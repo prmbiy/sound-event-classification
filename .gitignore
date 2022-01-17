@@ -6,4 +6,4 @@ dcase/data/cqt/*
 dcase/data/gammatone/*
 dcase/data/train/*
 dcase/data/validate/*
-
+__pycache__/
