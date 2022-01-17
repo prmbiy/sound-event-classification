@@ -26,7 +26,7 @@ def run(feature_type, num_frames, sample_rate):
 
     model = Task5Model(num_classes).to(device)
     folder_name = f'./models/{getSampleRateString(sample_rate)}'
-    model.load_state_dict(torch.load(f'{folder_name}/model_{feature_type}')
+    model.load_state_dict(torch.load(f'{folder_name}/model_{feature_type}'))
 
     preds = []
     for sample in valid_loader:
