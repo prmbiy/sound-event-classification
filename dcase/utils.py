@@ -55,9 +55,9 @@ class AudioDataset(Dataset):
 
         statistics_folder = getSampleRateString(sample_rate)
         self.channel_means = np.load(
-            './data/statistics/{}/channel_means_{}'.format(statistics_folder, feature_type))
+            './data/statistics/{}/channel_means_{}.npy'.format(statistics_folder, feature_type))
         self.channel_stds = np.load(
-            './data/statistics/{}/channel_stds_{}'.format(statistics_folder, feature_type))
+            './data/statistics/{}/channel_stds_{}.npy'.format(statistics_folder, feature_type))
 
         self.channel_means = self.channel_means.reshape(1, -1, 1)
         self.channel_stds = self.channel_stds.reshape(1, -1, 1)
