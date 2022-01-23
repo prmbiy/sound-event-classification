@@ -1,7 +1,7 @@
-batch_size = 8
+batch_size = 16
 labels = ['1_engine', '2_machinery-impact', '3_non-machinery-impact',
           '4_powered-saw', '5_alert-signal', '6_music', '7_human-voice', '8_dog']
-sample_rate = 44100
+sample_rate = 16000
 feature_type = 'logmelspec'
 num_bins = 128
 num_frames = 636
