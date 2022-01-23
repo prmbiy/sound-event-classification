@@ -1,6 +1,6 @@
 import pickle
 import pandas as pd
-import numpy as np 
+import numpy as np
 from albumentations import Compose, ShiftScaleRotate, GridDistortion
 from albumentations.pytorch import ToTensor
 import numpy as np
@@ -10,7 +10,7 @@ import torch.nn as nn
 from torch import optim
 import torch.nn.functional as F
 from torchvision import datasets, transforms, models
-from torch.utils.data import Dataset, DataLoader    
+from torch.utils.data import Dataset, DataLoader
 import random
 import torchvision
 from augmentation.SpecTransforms import ResizeSpectrogram
@@ -33,8 +33,8 @@ random_erasing = RandomErasing()
 
 class AudioDataset(Dataset):
 
-    def __init__(self, workspace, df, feature_type="logmelspec", perm=[0,1,2,3,4], spec_transform=None, image_transform=None, resize=None):
-        
+    def __init__(self, workspace, df, feature_type="logmelspec", perm=[0, 1, 2, 3, 4], spec_transform=None, image_transform=None, resize=None):
+
         self.workspace = workspace
         self.df = df
         self.filenames = df[0].unique()
@@ -45,23 +45,26 @@ class AudioDataset(Dataset):
         self.resize = ResizeSpectrogram(frames=resize)
         self.pil = transforms.ToPILImage()
 
-        self.channel_means = np.load('{}/statistics/channel_means_{}_{}.npy'.format(workspace, feature_type, str(perm[0])+str(perm[1])+str(perm[2])))
-        self.channel_stds = np.load('{}/statistics/channel_stds_{}_{}.npy'.format(workspace, feature_type, str(perm[0])+str(perm[1])+str(perm[2])))
+        self.channel_means = np.load('{}/statistics/channel_means_{}_{}.npy'.format(
+            workspace, feature_type, str(perm[0])+str(perm[1])+str(perm[2])))
+        self.channel_stds = np.load('{}/statistics/channel_stds_{}_{}.npy'.format(
+            workspace, feature_type, str(perm[0])+str(perm[1])+str(perm[2])))
 
-        self.channel_means = self.channel_means.reshape(1,-1,1)
-        self.channel_stds = self.channel_stds.reshape(1,-1,1)
+        self.channel_means = self.channel_means.reshape(1, -1, 1)
+        self.channel_stds = self.channel_stds.reshape(1, -1, 1)
 
     def __len__(self):
         return len(self.filenames)
 
     def __getitem__(self, idx):
-        
+
         curr = self.df.iloc[idx, :]
         file_name = curr[0]
         labels = class_mapping[file_name.split('-')[0]]
-        
-        sample = np.load(self.workspace + '/' + self.feature_type + '/' + file_name + '.wav.npy')
-        
+
+        sample = np.load(self.workspace + '/' +
+                         self.feature_type + '/' + file_name + '.wav.npy')
+
         if self.resize:
             sample = self.resize(sample)
 
@@ -72,7 +75,7 @@ class AudioDataset(Dataset):
             sample = self.spec_transform(sample)
 
 #        sample = sample.transpose(0,1)
-        
+
         if self.image_transform:
             # min-max transformation
             this_min = sample.min()
@@ -98,15 +101,16 @@ class AudioDataset(Dataset):
 
             # revert min-max transformation
             sample = (sample * (this_max - this_min)) + this_min
-        
-        if len(sample.shape)<3:
+
+        if len(sample.shape) < 3:
             sample = torch.unsqueeze(sample, 0)
-        
+
         labels = torch.LongTensor([labels]).squeeze()
-        
+
         data = {}
         data['data'], data['labels'], data['file_name'] = sample, labels, file_name
         return data
+
 
 class Task5Model(nn.Module):
 
@@ -135,8 +139,8 @@ class Task5Model(nn.Module):
         x = self.final(x)
         return x
 
-def mixup_data(x, y, alpha):
 
+def mixup_data(x, y, alpha):
     '''Compute the mixup data. Return mixed inputs, pairs of targets, and lambda'''
     if alpha > 0.:
         lam = np.random.beta(alpha, alpha)
@@ -144,6 +148,45 @@ def mixup_data(x, y, alpha):
         lam = 1.
     batch_size = x.size()[0]
     index = torch.randperm(batch_size).cuda()
-    mixed_x = lam * x + (1 - lam) * x[index,:]
+    mixed_x = lam * x + (1 - lam) * x[index, :]
     y_a, y_b = y, y[index]
     return mixed_x, y_a, y_b, lam
+
+
+def configureTorchDevice(cuda=torch.cuda.is_available()):
+    """Configures PyTorch to use GPU and prints the same.
+
+    Args:
+        cuda (bool): To enable GPU, cuda is True, else false. If no value, will then check if GPU exists or not.  
+
+    Returns:
+        torch.device: PyTorch device, which can be either cpu or gpu
+    """
+    device = torch.device('cuda:0' if cuda else 'cpu')
+    print('Device: ', device)
+    return device
+
+
+def getSampleRateString(sample_rate: int):
+    """return sample rate in Khz in string form
+
+    Args:
+        sample_rate (int): sample rate in Hz
+
+    Returns:
+        str: string of sample rate in kHz
+    """
+    return f"{sample_rate/1000}k"
+
+
+def dataSampleRateString(type: str, sample_rate: int):
+    """Compute string name for the type of data and sample_rate
+
+    Args:
+        type (str): type/purpose of data
+        sample_rate (int): sample rate of data in Hz
+
+    Returns:
+        str: string name for the type of data and sample_rate
+    """
+    return f"{type}_{getSampleRateString(sample_rate)}"
