@@ -11,13 +11,14 @@ import torch.nn as nn
 from torch import optim
 from torchvision import transforms
 from torch.utils.data import DataLoader
+from audioset.utils import getSampleRateString
 from tqdm import tqdm
 import random
 import argparse
 from utils import AudioDataset, Task5Model, configureTorchDevice
 from augmentation.SpecTransforms import TimeMask, FrequencyMask, RandomCycle
 
-from config import feature_type, num_frames, seed, permutation, batch_size, num_workers, num_classes, learning_rate, amsgrad, patience, verbose, epochs
+from config import feature_type, num_frames, seed, permutation, batch_size, num_workers, num_classes, learning_rate, amsgrad, patience, verbose, epochs, workspace, sample_rate
 
 
 def run(workspace, feature_type, num_frames, perm, seed):
@@ -37,7 +38,7 @@ def run(workspace, feature_type, num_frames, perm, seed):
 
     train_df = pd.concat([folds[perm[0]], folds[perm[1]], folds[perm[2]]])
     valid_df = folds[perm[3]]
-    test_df = folds[perm[4]]
+    # test_df = folds[perm[4]]
 
     spec_transforms = transforms.Compose([
         TimeMask(),
@@ -118,7 +119,7 @@ def run(workspace, feature_type, num_frames, perm, seed):
 
         if this_epoch_valid_loss < lowest_val_loss:
             lowest_val_loss = this_epoch_valid_loss
-            torch.save(model.state_dict(), '{}/model/model_{}_{}'.format(workspace,
+            torch.save(model.state_dict(), '{}/model/{}/model_{}_{}'.format(workspace, getSampleRateString(sample_rate),
                        feature_type, str(perm[0])+str(perm[1])+str(perm[2])))
             epochs_without_new_lowest = 0
         else:
@@ -135,7 +136,7 @@ def run(workspace, feature_type, num_frames, perm, seed):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Feature type')
-    parser.add_argument('-w', '--workspace', type=str, default='.')
+    parser.add_argument('-w', '--workspace', type=str, default=workspace)
     parser.add_argument('-f', '--feature_type', type=str, default=feature_type)
     parser.add_argument('-n', '--num_frames', type=int, default=num_frames)
     parser.add_argument('-p', '--permutation', type=int,

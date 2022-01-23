@@ -3,7 +3,7 @@ from tqdm import tqdm
 import argparse
 import pandas as pd
 import os
-from config import feature_type, num_bins, sample_rate
+from config import feature_type, num_bins, sample_rate, workspace
 from utils import getSampleRateString
 
 
@@ -56,7 +56,7 @@ def run(workspace, feature_type, num_bins, perm):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Feature type')
-    parser.add_argument('-w', '--workspace', type=str, default='.')
+    parser.add_argument('-w', '--workspace', type=str, default=workspace)
     # parser.add_argument('-d', '--dataset', type=str)
     parser.add_argument('-f', '--feature_type', type=str, default=feature_type)
     parser.add_argument('-n', '--num_bins', type=int, default=num_bins)

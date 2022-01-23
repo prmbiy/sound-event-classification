@@ -1,51 +1,45 @@
+import enum
 import pandas as pd
-import numpy as np 
+import numpy as np
 import pandas as pd
 import torch
 import torch.nn.functional as F
-from torch.utils.data import DataLoader    
+from torch.utils.data import DataLoader
 from sklearn.metrics import classification_report
 import argparse
-from utils import AudioDataset, Task5Model
-
-from augmentation.SpecTransforms import ResizeSpectrogram, TimeMask, FrequencyMask, RandomCycle
+from audioset.utils import getSampleRateString
+from utils import AudioDataset, Task5Model, configureTorchDevice
+from config import target_names, feature_type, num_frames, permutation, batch_size, num_workers, num_classes, sample_rate
 
 class_mapping = {}
-class_mapping['breaking'] = 0
-class_mapping['chatter'] = 1
-class_mapping['crying_sobbing'] = 2
-class_mapping['emergency_vehicle'] = 3
-class_mapping['explosion'] = 4
-class_mapping['gunshot_gunfire'] = 5
-class_mapping['motor_vehicle_road'] = 6
-class_mapping['screaming'] = 7
-class_mapping['siren'] = 8
-class_mapping['others'] = 9
+for i, target in enumerate(target_names):
+    class_mapping[target] = i
 
-target_names = ['breaking', 'chatter', 'crying_sobbing', 'emergency_vehicle', 'explosion', 'gunshot_gunfire', 'motor_vehicle_road', 'screaming', 'siren', 'others']
 
 def run(workspace, feature_type, num_frames, perm):
-    
+
     folds = []
     for i in range(5):
-        folds.append(pd.read_csv('{}/split/fold_{}_c.txt'.format(workspace, i), delimiter=" ", header=None))
+        folds.append(pd.read_csv(
+            '{}/split/fold_{}_c.txt'.format(workspace, i), delimiter=" ", header=None))
 
-    train_df = pd.concat([folds[perm[0]], folds[perm[1]], folds[perm[2]]])
-    valid_df = folds[perm[3]]
+    # train_df = pd.concat([folds[perm[0]], folds[perm[1]], folds[perm[2]]])
+    # valid_df = folds[perm[3]]
     test_df = folds[perm[4]]
 
     # Create the datasets and the dataloaders
 
-    test_dataset = AudioDataset(workspace, test_df, feature_type=feature_type, perm=perm, resize = num_frames)
-    test_loader = DataLoader(test_dataset, 16, shuffle=False, num_workers =2)
+    test_dataset = AudioDataset(
+        workspace, test_df, feature_type=feature_type, perm=perm, resize=num_frames)
+    test_loader = DataLoader(test_dataset, batch_size,
+                             shuffle=False, num_workers=num_workers)
 
-    cuda = True
-    device = torch.device('cuda:0' if cuda else 'cpu')
-    print('Device: ', device)
-    
+    device = configureTorchDevice()
+
     # Instantiate the model
-    model = Task5Model(10).to(device)
-    model.load_state_dict(torch.load('{}/model/model_{}_{}'.format(workspace, feature_type, str(perm[0])+str(perm[1])+str(perm[2]))))
+    model = Task5Model(num_classes).to(device)
+    model.load_state_dict(torch.load('{}/model/{}/model_{}_{}'.format(workspace, getSampleRateString(sample_rate),
+                          feature_type, str(perm[0])+str(perm[1])+str(perm[2]))))
 
     y_pred = []
     for sample in test_loader:
@@ -67,12 +61,14 @@ def run(workspace, feature_type, num_frames, perm):
 
     print(classification_report(y_true, y_pred, digits=4))
 
-if __name__=="__main__":
-    
+
+if __name__ == "__main__":
+
     parser = argparse.ArgumentParser(description='Feature type')
     parser.add_argument('-w', '--workspace', type=str)
-    parser.add_argument('-f', '--feature_type', type=str, default='logmelspec')
-    parser.add_argument('-n', '--num_frames', type=int, default=200)
-    parser.add_argument('-p', '--permutation', type=int, nargs='+', default = [0,1,2,3,4])
+    parser.add_argument('-f', '--feature_type', type=str, default=feature_type)
+    parser.add_argument('-n', '--num_frames', type=int, default=num_frames)
+    parser.add_argument('-p', '--permutation', type=int,
+                        nargs='+', default=permutation)
     args = parser.parse_args()
     run(args.workspace, args.feature_type, args.num_frames, args.permutation)

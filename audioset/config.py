@@ -1,13 +1,10 @@
 import numpy as np
 batch_size = 16
 num_workers = 2
-labels = ['1_engine', '2_machinery-impact', '3_non-machinery-impact',
-          '4_powered-saw', '5_alert-signal', '6_music', '7_human-voice', '8_dog']
 sample_rate = 16000
 feature_type = 'logmelspec'
 num_bins = 128
 resize = True
-num_classes = 10
 learning_rate = 0.001
 amsgrad = True
 verbose = True
@@ -28,3 +25,6 @@ fmax=sample_rate/2
 num_frames = int(np.ceil(sample_rate/hop_length))
 
 permutation = [0, 1, 2, 3, 4]
+workspace = '/notebooks/sound-event-classification/audioset/'
+target_names = ['breaking', 'chatter', 'crying_sobbing', 'emergency_vehicle', 'explosion', 'gunshot_gunfire', 'motor_vehicle_road', 'screaming', 'siren', 'others']
+num_classes = len(target_names)

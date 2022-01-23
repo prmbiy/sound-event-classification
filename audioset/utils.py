@@ -1,17 +1,9 @@
-import pickle
-import pandas as pd
 import numpy as np
-from albumentations import Compose, ShiftScaleRotate, GridDistortion
-from albumentations.pytorch import ToTensor
 import numpy as np
-import pandas as pd
 import torch
 import torch.nn as nn
-from torch import optim
-import torch.nn.functional as F
-from torchvision import datasets, transforms, models
-from torch.utils.data import Dataset, DataLoader
-import random
+from torchvision import transforms
+from torch.utils.data import Dataset
 import torchvision
 from augmentation.SpecTransforms import ResizeSpectrogram
 from augmentation.RandomErasing import RandomErasing
@@ -30,24 +22,26 @@ class_mapping['others'] = 9
 
 random_erasing = RandomErasing()
 
+from config import feature_type, permutation, sample_rate, num_frames
 
 class AudioDataset(Dataset):
 
-    def __init__(self, workspace, df, feature_type="logmelspec", perm=[0, 1, 2, 3, 4], spec_transform=None, image_transform=None, resize=None):
+    def __init__(self, workspace, df, feature_type=feature_type, perm=permutation, spec_transform=None, image_transform=None, resize=num_frames, sample_rate = sample_rate):
 
         self.workspace = workspace
         self.df = df
         self.filenames = df[0].unique()
         self.feature_type = feature_type
+        self.sample_rate = sample_rate
 
         self.spec_transform = spec_transform
         self.image_transform = image_transform
         self.resize = ResizeSpectrogram(frames=resize)
         self.pil = transforms.ToPILImage()
 
-        self.channel_means = np.load('{}/statistics/channel_means_{}_{}.npy'.format(
+        self.channel_means = np.load('{}/data/statistics/channel_means_{}_{}.npy'.format(
             workspace, feature_type, str(perm[0])+str(perm[1])+str(perm[2])))
-        self.channel_stds = np.load('{}/statistics/channel_stds_{}_{}.npy'.format(
+        self.channel_stds = np.load('{}/data/statistics/channel_stds_{}_{}.npy'.format(
             workspace, feature_type, str(perm[0])+str(perm[1])+str(perm[2])))
 
         self.channel_means = self.channel_means.reshape(1, -1, 1)
@@ -62,8 +56,7 @@ class AudioDataset(Dataset):
         file_name = curr[0]
         labels = class_mapping[file_name.split('-')[0]]
 
-        sample = np.load(self.workspace + '/' +
-                         self.feature_type + '/' + file_name + '.wav.npy')
+        sample = np.load(f"{self.workspace}/data/{self.feature_type}/audio_{getSampleRateString(self.sample_rate)}/{file_name}.wav.npy")
 
         if self.resize:
             sample = self.resize(sample)
@@ -134,8 +127,6 @@ class Task5Model(nn.Module):
         x = self.bw2col(x)
         x = self.mv2.features(x)
         x = x.max(dim=-1)[0].max(dim=-1)[0]
-        print(x.size())
-#        x = x.transpose(0,1)
         x = self.final(x)
         return x
 
