@@ -35,6 +35,7 @@ def run(workspace, feature_type, num_bins, perm):
         except FileNotFoundError:
             no_file_count += 1
             print(file_name)
+            continue
         x = data.mean(axis=1)
         n += 1
         delta = x - mean

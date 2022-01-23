@@ -1,30 +1,15 @@
-import pickle
-import yaml
 import pandas as pd
 import numpy as np 
-from albumentations import Compose, ShiftScaleRotate, GridDistortion
-from albumentations.pytorch import ToTensor
-import librosa
-import sys
-import os
-import numpy as np
 import pandas as pd
-from torch.utils.data.sampler import SubsetRandomSampler
-import matplotlib.pyplot as plt
 import torch
-import torch.nn as nn
-from torch import optim
-import torchvision
 import torch.nn.functional as F
-from torchvision import datasets, transforms, models
-from torch.utils.data import Dataset, DataLoader    
-from tqdm import tqdm, trange
-import random
+from torch.utils.data import DataLoader    
 from sklearn.metrics import classification_report
 import argparse
 from utils import AudioDataset, Task5Model
 
 from augmentation.SpecTransforms import ResizeSpectrogram, TimeMask, FrequencyMask, RandomCycle
+
 class_mapping = {}
 class_mapping['breaking'] = 0
 class_mapping['chatter'] = 1
