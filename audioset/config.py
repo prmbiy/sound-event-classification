@@ -22,7 +22,7 @@ hop_length=694
 n_mels=128
 fmin=20
 fmax=sample_rate/2
-num_frames = int(np.ceil(sample_rate/hop_length))
+num_frames = int(np.ceil(sample_rate*length_full_recording/hop_length))
 
 permutation = [0, 1, 2, 3, 4]
 workspace = '/notebooks/sound-event-classification/audioset/'

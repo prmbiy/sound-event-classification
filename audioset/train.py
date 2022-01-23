@@ -11,11 +11,10 @@ import torch.nn as nn
 from torch import optim
 from torchvision import transforms
 from torch.utils.data import DataLoader
-from audioset.utils import getSampleRateString
 from tqdm import tqdm
 import random
 import argparse
-from utils import AudioDataset, Task5Model, configureTorchDevice
+from utils import AudioDataset, Task5Model, configureTorchDevice, getSampleRateString
 from augmentation.SpecTransforms import TimeMask, FrequencyMask, RandomCycle
 
 from config import feature_type, num_frames, seed, permutation, batch_size, num_workers, num_classes, learning_rate, amsgrad, patience, verbose, epochs, workspace, sample_rate
