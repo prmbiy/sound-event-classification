@@ -8,4 +8,8 @@ dcase/data/train/*
 dcase/data/validate/*
 dcase/test.wav
 __pycache__/
+<<<<<<< HEAD
 .ipynb_checkpoints
+=======
+dcase/.ipynb_checkpoints
+>>>>>>> 09eb4eaac9cd542438e2aa328b62159de00fd6b2
