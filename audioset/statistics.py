@@ -30,7 +30,7 @@ def run(workspace, feature_type, num_bins, perm):
     n = 0
     for file_name in tqdm(file_list):
         try:
-            data = np.load('{}/data/{}/audio_{}k/{}.wav.npy'.format(workspace,
+            data = np.load('{}/data/{}/audio_{}/{}.wav.npy'.format(workspace,
                            feature_type, getSampleRateString(sample_rate), file_name))
         except FileNotFoundError:
             no_file_count += 1
