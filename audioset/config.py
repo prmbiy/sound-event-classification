@@ -1,7 +1,7 @@
 import numpy as np
 batch_size = 16
 num_workers = 2
-sample_rate = 16000
+sample_rate = 44100
 feature_type = 'logmelspec'
 num_bins = 128
 resize = True
@@ -22,9 +22,10 @@ hop_length=694
 n_mels=128
 fmin=20
 fmax=sample_rate/2
+# num_frames = 200
 num_frames = int(np.ceil(sample_rate*length_full_recording/hop_length))
 
 permutation = [0, 1, 2, 3, 4]
-workspace = '/notebooks/sound-event-classification/audioset/'
+workspace = '/notebooks/sound-event-classification/audioset'
 target_names = ['breaking', 'chatter', 'crying_sobbing', 'emergency_vehicle', 'explosion', 'gunshot_gunfire', 'motor_vehicle_road', 'screaming', 'siren', 'others']
 num_classes = len(target_names)

@@ -118,8 +118,9 @@ def run(workspace, feature_type, num_frames, perm, seed):
 
         if this_epoch_valid_loss < lowest_val_loss:
             lowest_val_loss = this_epoch_valid_loss
-            torch.save(model.state_dict(), '{}/model/{}/model_{}_{}'.format(workspace, getSampleRateString(sample_rate),
-                       feature_type, str(perm[0])+str(perm[1])+str(perm[2])))
+            folderpath = '{}/model/{}'.format(workspace, getSampleRateString(sample_rate))
+            os.makedirs(folderpath, exist_ok = True)
+            torch.save(model.state_dict(), '{}/model_{}_{}'.format(folderpath, feature_type, str(perm[0])+str(perm[1])+str(perm[2])))
             epochs_without_new_lowest = 0
         else:
             epochs_without_new_lowest += 1

@@ -7,9 +7,8 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from sklearn.metrics import classification_report
 import argparse
-from audioset.utils import getSampleRateString
-from utils import AudioDataset, Task5Model, configureTorchDevice
-from config import target_names, feature_type, num_frames, permutation, batch_size, num_workers, num_classes, sample_rate
+from utils import AudioDataset, Task5Model, configureTorchDevice, getSampleRateString
+from config import target_names, feature_type, num_frames, permutation, batch_size, num_workers, num_classes, sample_rate, workspace
 
 class_mapping = {}
 for i, target in enumerate(target_names):
@@ -23,17 +22,20 @@ def run(workspace, feature_type, num_frames, perm):
         folds.append(pd.read_csv(
             '{}/split/fold_{}_c.txt'.format(workspace, i), delimiter=" ", header=None))
 
-    # train_df = pd.concat([folds[perm[0]], folds[perm[1]], folds[perm[2]]])
-    # valid_df = folds[perm[3]]
+    train_df = pd.concat([folds[perm[0]], folds[perm[1]], folds[perm[2]]])
+    valid_df = folds[perm[3]]
     test_df = folds[perm[4]]
 
     # Create the datasets and the dataloaders
-
+    train_dataset = AudioDataset(
+        workspace, train_df, feature_type=feature_type, perm=perm, resize=num_frames)
+    valid_dataset = AudioDataset(
+        workspace, valid_df, feature_type=feature_type, perm=perm, resize=num_frames)
     test_dataset = AudioDataset(
         workspace, test_df, feature_type=feature_type, perm=perm, resize=num_frames)
     test_loader = DataLoader(test_dataset, batch_size,
                              shuffle=False, num_workers=num_workers)
-
+    print(len(train_dataset), len(valid_dataset), len(test_dataset))
     device = configureTorchDevice()
 
     # Instantiate the model
@@ -65,7 +67,7 @@ def run(workspace, feature_type, num_frames, perm):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Feature type')
-    parser.add_argument('-w', '--workspace', type=str)
+    parser.add_argument('-w', '--workspace', type=str, default=workspace)
     parser.add_argument('-f', '--feature_type', type=str, default=feature_type)
     parser.add_argument('-n', '--num_frames', type=int, default=num_frames)
     parser.add_argument('-p', '--permutation', type=int,
