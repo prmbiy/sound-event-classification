@@ -17,7 +17,7 @@ import argparse
 from utils import AudioDataset, Task5Model, configureTorchDevice, getSampleRateString
 from augmentation.SpecTransforms import TimeMask, FrequencyMask, RandomCycle
 
-from config import feature_type, num_frames, seed, permutation, batch_size, num_workers, num_classes, learning_rate, amsgrad, patience, verbose, epochs, workspace, sample_rate
+from config import feature_type, num_frames, seed, permutation, batch_size, num_workers, num_classes, learning_rate, amsgrad, patience, verbose, epochs, workspace, sample_rate, early_stopping
 
 
 def run(workspace, feature_type, num_frames, perm, seed):
@@ -125,7 +125,7 @@ def run(workspace, feature_type, num_frames, perm, seed):
         else:
             epochs_without_new_lowest += 1
 
-        if epochs_without_new_lowest >= 25:
+        if epochs_without_new_lowest >= early_stopping:
             break
 
         print(this_epoch_train_loss, this_epoch_valid_loss)
