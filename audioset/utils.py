@@ -39,10 +39,10 @@ class AudioDataset(Dataset):
         self.resize = ResizeSpectrogram(frames=resize)
         self.pil = transforms.ToPILImage()
 
-        self.channel_means = np.load('{}/data/statistics/channel_means_{}_{}.npy'.format(
-            workspace, feature_type, str(perm[0])+str(perm[1])+str(perm[2])))
-        self.channel_stds = np.load('{}/data/statistics/channel_stds_{}_{}.npy'.format(
-            workspace, feature_type, str(perm[0])+str(perm[1])+str(perm[2])))
+        self.channel_means = np.load('{}/data/statistics/{}/channel_means_{}_{}.npy'.format(
+            workspace, getSampleRateString(sample_rate), feature_type, str(perm[0])+str(perm[1])+str(perm[2])))
+        self.channel_stds = np.load('{}/data/statistics/{}/channel_stds_{}_{}.npy'.format(
+            workspace, getSampleRateString(sample_rate), feature_type, str(perm[0])+str(perm[1])+str(perm[2])))
 
         self.channel_means = self.channel_means.reshape(1, -1, 1)
         self.channel_stds = self.channel_stds.reshape(1, -1, 1)

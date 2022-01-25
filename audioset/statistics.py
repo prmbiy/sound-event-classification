@@ -46,10 +46,11 @@ def run(workspace, feature_type, num_bins, perm):
     stdev = np.sqrt(variance)
     print(no_file_count)
 
-    os.makedirs('{}/data/statistics'.format(workspace), exist_ok=True)
-    np.save('{}/data/statistics/channel_means_{}_{}'.format(workspace,
+    folder_path = '{}/data/statistics/{}'.format(workspace, getSampleRateString(sample_rate))
+    os.makedirs(folder_path, exist_ok=True)
+    np.save('{}/channel_means_{}_{}'.format(folder_path,
             feature_type, str(perm[0])+str(perm[1])+str(perm[2])), mean)
-    np.save('{}/data/statistics/channel_stds_{}_{}'.format(workspace,
+    np.save('{}/channel_stds_{}_{}'.format(folder_path,
             feature_type, str(perm[0])+str(perm[1])+str(perm[2])), stdev)
 
 
