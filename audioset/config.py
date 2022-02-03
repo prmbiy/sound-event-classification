@@ -11,11 +11,11 @@ verbose = True
 patience = 5
 epochs = 50
 early_stopping = 10
-threshold = 0.3
+threshold = 0.9
 gpu = False
 channels = 2
 length_full_recording = 10
-audio_segment_length = 9
+audio_segment_length = 3
 seed = 42
 
 n_fft=2560

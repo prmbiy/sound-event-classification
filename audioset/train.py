@@ -139,8 +139,7 @@ if __name__ == "__main__":
     parser.add_argument('-w', '--workspace', type=str, default=workspace)
     parser.add_argument('-f', '--feature_type', type=str, default=feature_type)
     parser.add_argument('-n', '--num_frames', type=int, default=num_frames)
-    parser.add_argument('-p', '--permutation', type=int,
-                        nargs='+', default=permutation)
+    parser.add_argument('-p', '--permutation', type=int, nargs='+', default=permutation)
     parser.add_argument('-s', '--seed', type=int, default=seed)
     args = parser.parse_args()
     run(args.workspace, args.feature_type,
