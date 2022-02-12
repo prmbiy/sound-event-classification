@@ -1,4 +1,5 @@
-import numpy as np
+import pandas as pd
+from config import feature_type, permutation, sample_rate, num_frames
 import numpy as np
 import torch
 import torch.nn as nn
@@ -7,6 +8,7 @@ from torch.utils.data import Dataset
 import torchvision
 from augmentation.SpecTransforms import ResizeSpectrogram
 from augmentation.RandomErasing import RandomErasing
+import random
 
 class_mapping = {}
 class_mapping['breaking'] = 0
@@ -22,11 +24,38 @@ class_mapping['others'] = 9
 
 random_erasing = RandomErasing()
 
-from config import feature_type, permutation, sample_rate, num_frames
+
+def getFileNameFromDf(df: pd.DataFrame, idx: int) -> str:
+    """Returns filename for the audio file at index idx of df
+
+    Args:
+        df (pd.Dataframe): df of audio files
+        idx (int): index of audio file in df
+
+    Returns:
+        str: file name of audio file at index 'idx' in df.
+    """
+    curr = df.iloc[idx, :]
+    file_name = curr[0]
+    return file_name
+
+
+def getLabelFromFilename(file_name: str) -> int:
+    """Extracts the label from the filename
+
+    Args:
+        file_name (str): audio file name
+
+    Returns:
+        int: integer label for the audio file name
+    """
+    label = class_mapping[file_name.split('-')[0]]
+    return label
+
 
 class AudioDataset(Dataset):
 
-    def __init__(self, workspace, df, feature_type=feature_type, perm=permutation, spec_transform=None, image_transform=None, resize=num_frames, sample_rate = sample_rate):
+    def __init__(self, workspace, df, feature_type=feature_type, perm=permutation, spec_transform=None, image_transform=None, resize=num_frames, sample_rate=sample_rate):
 
         self.workspace = workspace
         self.df = df
@@ -51,12 +80,11 @@ class AudioDataset(Dataset):
         return len(self.filenames)
 
     def __getitem__(self, idx):
+        file_name = getFileNameFromDf(self.df, idx)
+        labels = getLabelFromFilename(file_name)
 
-        curr = self.df.iloc[idx, :]
-        file_name = curr[0]
-        labels = class_mapping[file_name.split('-')[0]]
-
-        sample = np.load(f"{self.workspace}/data/{self.feature_type}/audio_{getSampleRateString(self.sample_rate)}/{file_name}.wav.npy")
+        sample = np.load(
+            f"{self.workspace}/data/{self.feature_type}/audio_{getSampleRateString(self.sample_rate)}/{file_name}.wav.npy")
 
         if self.resize:
             sample = self.resize(sample)
@@ -66,8 +94,6 @@ class AudioDataset(Dataset):
 
         if self.spec_transform:
             sample = self.spec_transform(sample)
-
-#        sample = sample.transpose(0,1)
 
         if self.image_transform:
             # min-max transformation
@@ -84,7 +110,6 @@ class AudioDataset(Dataset):
 
             # apply albumentations transforms
             sample = np.array(self.pil(sample))
-#            print(sample.shape)
             sample = self.image_transform(image=sample)
             sample = sample['image']
             sample = sample[None, :, :].permute(0, 2, 1)
@@ -103,6 +128,47 @@ class AudioDataset(Dataset):
         data = {}
         data['data'], data['labels'], data['file_name'] = sample, labels, file_name
         return data
+
+
+class BalancedBatchSampler(torch.utils.data.sampler.Sampler):
+    def __init__(self, dataset_df):
+        self.df = dataset_df
+        self.filenames = self.df[0].unique()
+        self.length = len(self.filenames)
+        self.dataset = dict()
+        self.balanced_max = 0
+        # Save all the indices for all the classes
+        for idx in range(0, self.length):
+            label = self._get_label(idx)
+            if label not in self.dataset:
+                self.dataset[label] = list()
+            self.dataset[label].append(idx)
+            if len(self.dataset[label]) > self.balanced_max:
+                self.balanced_max = len(self.dataset[label])
+
+        # Oversample the classes with fewer elements than the max
+        for label in self.dataset:
+            diff = self.balanced_max - len(self.dataset[label])
+            if diff > 0:
+                self.dataset[label].append(np.random.choice(self.dataset[label], size=diff))
+        self.keys = list(self.dataset.keys())
+        self.currentkey = 0
+        self.indices = [-1]*len(self.keys)
+
+    def __iter__(self):
+        while self.indices[self.currentkey] < self.balanced_max - 1:
+            self.indices[self.currentkey] += 1
+            yield self.dataset[self.keys[self.currentkey]][self.indices[self.currentkey]]
+            self.currentkey = (self.currentkey + 1) % len(self.keys)
+        self.indices = [-1]*len(self.keys)
+
+    def _get_label(self, idx):
+        file_name = getFileNameFromDf(self.df, idx)
+        label = getLabelFromFilename(file_name)
+        return label
+
+    def __len__(self):
+        return self.balanced_max*len(self.keys)
 
 
 class Task5Model(nn.Module):

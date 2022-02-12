@@ -1,7 +1,6 @@
 import numpy as np
 batch_size = 16
 num_workers = 2
-sample_rate = 44100
 feature_type = 'logmelspec'
 num_bins = 128
 resize = True
@@ -11,13 +10,14 @@ verbose = True
 patience = 5
 epochs = 50
 early_stopping = 10
-threshold = 0.9
 gpu = False
 channels = 2
 length_full_recording = 10
 audio_segment_length = 3
 seed = 42
 
+sample_rate = 8000
+threshold = 0.8
 n_fft=2560
 hop_length=694
 n_mels=128

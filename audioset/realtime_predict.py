@@ -1,9 +1,11 @@
+import time
 import wave
 import librosa
 import torch
 import pyaudio
 import argparse
 import numpy as np
+import matplotlib.pyplot as plt
 from utils import Task5Model, configureTorchDevice, getSampleRateString
 from augmentation.SpecTransforms import ResizeSpectrogram
 from config import target_names, sample_rate, num_frames, gpu, threshold, num_classes, channels, n_fft, hop_length, n_mels, fmin, fmax, audio_segment_length, length_full_recording, resize, feature_type, permutation
@@ -61,10 +63,12 @@ def record(args):
         sample_width=wf.getsampwidth()
         chunk=fs
         sr=fs
+        # print(f'Sample rate for localfile: ', fs)
 
     frames=[]
     # frames = [b'110001001', b'10100010110', b'1001111011']
     length_recorded=0
+    all_outputs = []
     while length_recorded < length_full_recording:
         if mode == 'record':
             data=stream.read(chunk)
@@ -87,10 +91,10 @@ def record(args):
         wf1.writeframes(audio_segment)
         wf1.close()
 
-        wav=librosa.load(temp_filename, sr=fs)[0]
+        wav=librosa.load(temp_filename, sr=sample_rate)[0]
         melspec=librosa.feature.melspectrogram(
             wav,
-            sr=fs,
+            sr=sample_rate,
             n_fft=n_fft,
             hop_length=hop_length,
             n_mels=n_mels,
@@ -108,9 +112,16 @@ def record(args):
         with torch.set_grad_enabled(False):
             outputs=model(inputs)
             outputs=torch.sigmoid(outputs)[0].detach().cpu().numpy()
-            print(length_recorded, outputs, [val if outputs[i]>threshold else '' for i, val in enumerate(labels)])
+            all_outputs.append(outputs)
+            # print(length_recorded, outputs, [val if outputs[i]>threshold else '' for i, val in enumerate(labels)])
+            print(f'{length_recorded}: ', end='')
             for i, val in enumerate(outputs):
                 final_outputs[i]=final_outputs[i] or val > threshold
+                if(val>threshold):
+                    print(f'{labels[i]}, ', end='')
+            print(f' ')
+        # if mode=='localfile':
+        #     time.sleep(1)
 
     if mode == 'record':
         # Stop and close the stream
@@ -122,9 +133,25 @@ def record(args):
     elif mode == 'localfile':
         wf.close()
         print(f'Finished processing {length_full_recording}s of {filename} ')
-    final_prediction=[labels[i] if val else "" for i,
-                        val in enumerate(final_outputs)]
-    print('final_prediction', final_prediction)
+    final_prediction=[labels[i] if val else "" ]
+    print('final_predictions: ', end='')
+    for i, val in enumerate(final_outputs):
+        if val:
+            print(f'{labels[i]}, ', end='')
+    print()
+    heatmap_outputs = np.array(all_outputs).T
+    ax = plt.axes()
+    plt.imshow(heatmap_outputs)
+    plt.colorbar()
+    ax.set_xticks(np.arange(length_full_recording - audio_segment_length), labels=[f'{i}' for i in range(audio_segment_length+1, length_full_recording+1, 1)])
+    ax.set_yticks(np.arange(len(labels)), labels=labels)
+    if mode == 'localfile':
+        plt.title(filename)
+        plt.savefig(filename.replace('.wav', '.png'))
+    else:
+        plt.title('Recording outputs')
+        plt.show()
+        plt.savefig('output.png')
 
 if __name__ == "__main__":
     parser=argparse.ArgumentParser(
