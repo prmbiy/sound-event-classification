@@ -14,7 +14,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 import random
 import argparse
-from utils import AudioDataset, Task5Model, configureTorchDevice, getSampleRateString
+from utils import AudioDataset, Task5Model, configureTorchDevice, getSampleRateString, BalancedBatchSampler
 from augmentation.SpecTransforms import TimeMask, FrequencyMask, RandomCycle
 
 from config import feature_type, num_frames, seed, permutation, batch_size, num_workers, num_classes, learning_rate, amsgrad, patience, verbose, epochs, workspace, sample_rate, early_stopping
@@ -64,7 +64,7 @@ def run(workspace, feature_type, num_frames, perm, seed):
 
     val_loader = DataLoader(valid_dataset, batch_size, shuffle=False, num_workers=num_workers)
     train_loader = DataLoader(
-        train_dataset, batch_size, shuffle=True, num_workers=num_workers, drop_last=True)
+        train_dataset, batch_size, sampler=BalancedBatchSampler(train_df), num_workers=num_workers, drop_last=True)
 
     # Define the device to be used
     device = configureTorchDevice()
@@ -139,8 +139,7 @@ if __name__ == "__main__":
     parser.add_argument('-w', '--workspace', type=str, default=workspace)
     parser.add_argument('-f', '--feature_type', type=str, default=feature_type)
     parser.add_argument('-n', '--num_frames', type=int, default=num_frames)
-    parser.add_argument('-p', '--permutation', type=int,
-                        nargs='+', default=permutation)
+    parser.add_argument('-p', '--permutation', type=int, nargs='+', default=permutation)
     parser.add_argument('-s', '--seed', type=int, default=seed)
     args = parser.parse_args()
     run(args.workspace, args.feature_type,
