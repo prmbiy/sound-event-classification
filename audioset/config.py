@@ -1,7 +1,7 @@
 import numpy as np
 batch_size = 16
 num_workers = 2
-sample_rate = 44100
+sample_rate = 88200
 feature_type = 'logmelspec'
 num_bins = 128
 resize = True
