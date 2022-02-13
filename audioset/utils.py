@@ -151,7 +151,7 @@ class BalancedBatchSampler(torch.utils.data.sampler.Sampler):
         for label in self.dataset:
             diff = self.balanced_max - len(self.dataset[label])
             if diff > 0:
-                self.dataset[label].append(np.random.choice(self.dataset[label], size=diff))
+                self.dataset[label].extend(np.random.choice(self.dataset[label], size=diff))
         self.keys = list(self.dataset.keys())
         self.currentkey = 0
         self.indices = [-1]*len(self.keys)
@@ -159,7 +159,6 @@ class BalancedBatchSampler(torch.utils.data.sampler.Sampler):
     def __iter__(self) -> Iterator[int]:
         while self.indices[self.currentkey] < self.balanced_max - 1:
             self.indices[self.currentkey] += 1
-            print(self.dataset, self.keys, self.indices, self.currentkey)
             yield self.dataset[self.keys[self.currentkey]][self.indices[self.currentkey]]
             self.currentkey = (self.currentkey + 1) % len(self.keys)
         self.indices = [-1]*len(self.keys)
