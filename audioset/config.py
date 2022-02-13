@@ -1,5 +1,4 @@
 import numpy as np
-batch_size = 16
 num_workers = 2
 feature_type = 'logmelspec'
 num_bins = 128
@@ -30,3 +29,4 @@ permutation = [0, 1, 2, 3, 4]
 workspace = '/notebooks/sound-event-classification/audioset'
 target_names = ['breaking', 'chatter', 'crying_sobbing', 'emergency_vehicle', 'explosion', 'gunshot_gunfire', 'motor_vehicle_road', 'screaming', 'siren', 'others']
 num_classes = len(target_names)
+batch_size = num_classes * 1 #for balancedbatchsampler, for every batch to have equal number of samples, the size of each batch should be a multiple of the num of classes

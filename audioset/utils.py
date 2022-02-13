@@ -1,3 +1,4 @@
+from typing import Iterator
 import pandas as pd
 from config import feature_type, permutation, sample_rate, num_frames
 import numpy as np
@@ -155,9 +156,10 @@ class BalancedBatchSampler(torch.utils.data.sampler.Sampler):
         self.currentkey = 0
         self.indices = [-1]*len(self.keys)
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[int]:
         while self.indices[self.currentkey] < self.balanced_max - 1:
             self.indices[self.currentkey] += 1
+            print(self.dataset, self.keys, self.indices, self.currentkey)
             yield self.dataset[self.keys[self.currentkey]][self.indices[self.currentkey]]
             self.currentkey = (self.currentkey + 1) % len(self.keys)
         self.indices = [-1]*len(self.keys)
