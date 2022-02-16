@@ -20,14 +20,14 @@ from augmentation.SpecTransforms import TimeMask, FrequencyMask, RandomCycle
 from config import feature_type, num_frames, seed, permutation, batch_size, num_workers, num_classes, learning_rate, amsgrad, patience, verbose, epochs, workspace, sample_rate, early_stopping
 
 
-def run(workspace, feature_type, num_frames, perm, seed):
+def run(workspace, feature_type, num_frames, perm, seed, resume_training):
 
+    starting_epoch = 0
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
-
     os.makedirs('{}/model'.format(workspace), exist_ok=True)
 
     folds = []
@@ -62,7 +62,8 @@ def run(workspace, feature_type, num_frames, perm, seed):
     valid_dataset = AudioDataset(
         workspace, valid_df, feature_type=feature_type, perm=perm, resize=num_frames)
 
-    val_loader = DataLoader(valid_dataset, batch_size, shuffle=False, num_workers=num_workers)
+    val_loader = DataLoader(valid_dataset, batch_size,
+                            shuffle=False, num_workers=num_workers)
     train_loader = DataLoader(
         train_dataset, batch_size, sampler=BalancedBatchSampler(train_df), num_workers=num_workers, drop_last=True)
 
@@ -70,9 +71,15 @@ def run(workspace, feature_type, num_frames, perm, seed):
     device = configureTorchDevice()
     # Instantiate the model
     model = Task5Model(num_classes).to(device)
+    folderpath = '{}/model/{}'.format(workspace,
+                                      getSampleRateString(sample_rate))
+    os.makedirs(folderpath, exist_ok=True)
+    model_path = '{}/model_{}_{}'.format(folderpath,
+                                         feature_type, str(perm[0])+str(perm[1])+str(perm[2]))
 
     # Define optimizer, scheduler and loss criteria
-    optimizer = optim.Adam(model.parameters(), lr=learning_rate, amsgrad=amsgrad)
+    optimizer = optim.Adam(
+        model.parameters(), lr=learning_rate, amsgrad=amsgrad)
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(
         optimizer, patience=patience, verbose=verbose)
     criterion = nn.CrossEntropyLoss()
@@ -82,7 +89,13 @@ def run(workspace, feature_type, num_frames, perm, seed):
     lowest_val_loss = np.inf
     epochs_without_new_lowest = 0
 
-    for i in range(epochs):
+    if resume_training and os.path.exists(model_path):
+        checkpoint = torch.load(model_path)
+        model.load_state_dict(checkpoint['model_state_dict'])
+        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        starting_epoch = checkpoint['epoch']
+
+    for i in range(starting_epoch, starting_epoch+epochs):
         print('Epoch: ', i)
 
         this_epoch_train_loss = 0
@@ -118,9 +131,11 @@ def run(workspace, feature_type, num_frames, perm, seed):
 
         if this_epoch_valid_loss < lowest_val_loss:
             lowest_val_loss = this_epoch_valid_loss
-            folderpath = '{}/model/{}'.format(workspace, getSampleRateString(sample_rate))
-            os.makedirs(folderpath, exist_ok = True)
-            torch.save(model.state_dict(), '{}/model_{}_{}'.format(folderpath, feature_type, str(perm[0])+str(perm[1])+str(perm[2])))
+            torch.save({
+                'epoch': i,
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict()
+            }, model_path)
             epochs_without_new_lowest = 0
         else:
             epochs_without_new_lowest += 1
@@ -139,8 +154,10 @@ if __name__ == "__main__":
     parser.add_argument('-w', '--workspace', type=str, default=workspace)
     parser.add_argument('-f', '--feature_type', type=str, default=feature_type)
     parser.add_argument('-n', '--num_frames', type=int, default=num_frames)
-    parser.add_argument('-p', '--permutation', type=int, nargs='+', default=permutation)
+    parser.add_argument('-p', '--permutation', type=int,
+                        nargs='+', default=permutation)
     parser.add_argument('-s', '--seed', type=int, default=seed)
+    parser.add_argument('-rt', '--resume_training', type=bool, default=True)
     args = parser.parse_args()
     run(args.workspace, args.feature_type,
-        args.num_frames, args.permutation, args.seed)
+        args.num_frames, args.permutation, args.seed, args.resume_training)
