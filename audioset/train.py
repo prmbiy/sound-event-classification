@@ -17,10 +17,10 @@ import argparse
 from utils import AudioDataset, Task5Model, configureTorchDevice, getSampleRateString, BalancedBatchSampler
 from augmentation.SpecTransforms import TimeMask, FrequencyMask, RandomCycle
 
-from config import feature_type, num_frames, seed, permutation, batch_size, num_workers, num_classes, learning_rate, amsgrad, patience, verbose, epochs, workspace, sample_rate, early_stopping
+from config import feature_type, num_frames, seed, permutation, batch_size, num_workers, num_classes, learning_rate, amsgrad, patience, verbose, epochs, workspace, sample_rate, early_stopping, grad_acc_steps
 
 
-def run(workspace, feature_type, num_frames, perm, seed, resume_training):
+def run(workspace, feature_type, num_frames, perm, seed, resume_training, grad_acc_steps):
 
     starting_epoch = 0
     random.seed(seed)
@@ -95,22 +95,25 @@ def run(workspace, feature_type, num_frames, perm, seed, resume_training):
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         starting_epoch = checkpoint['epoch']
 
+    optimizer.zero_grad()
     for i in range(starting_epoch, starting_epoch+epochs):
         print('Epoch: ', i)
 
         this_epoch_train_loss = 0
+        batch = 0
         for sample in tqdm(train_loader):
-
+            batch += 1
             inputs = sample['data'].to(device)
             label = sample['labels'].to(device)
 
-            optimizer.zero_grad()
             with torch.set_grad_enabled(True):
                 model = model.train()
                 outputs = model(inputs)
                 loss = criterion(outputs, label)
                 loss.backward()
-                optimizer.step()
+                if batch % grad_acc_steps == 0 or batch % len(train_loader) == 0:
+                    optimizer.step()
+                    optimizer.zero_grad()
                 this_epoch_train_loss += loss.detach().cpu().numpy()
 
         this_epoch_valid_loss = 0
@@ -158,6 +161,8 @@ if __name__ == "__main__":
                         nargs='+', default=permutation)
     parser.add_argument('-s', '--seed', type=int, default=seed)
     parser.add_argument('-rt', '--resume_training', type=bool, default=True)
+    parser.add_argument('-ga', '--grad_acc_steps',
+                        type=int, default=grad_acc_steps)
     args = parser.parse_args()
     run(args.workspace, args.feature_type,
-        args.num_frames, args.permutation, args.seed, args.resume_training)
+        args.num_frames, args.permutation, args.seed, args.resume_training, args.grad_acc_steps)

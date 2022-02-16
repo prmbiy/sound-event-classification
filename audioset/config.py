@@ -30,3 +30,4 @@ workspace = '/notebooks/sound-event-classification/audioset'
 target_names = ['breaking', 'chatter', 'crying_sobbing', 'emergency_vehicle', 'explosion', 'gunshot_gunfire', 'motor_vehicle_road', 'screaming', 'siren', 'others']
 num_classes = len(target_names)
 batch_size = num_classes * 1 #for balancedbatchsampler, for every batch to have equal number of samples, the size of each batch should be a multiple of the num of classes
+grad_acc_steps = 2
