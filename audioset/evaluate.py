@@ -63,8 +63,8 @@ def run(workspace, feature_type, num_frames, perm):
 
     print(f'Including other class:')
     print(classification_report(y_true, y_pred, digits=4))
-    print(f'F1 Score: {f1_score(y_true, y_pred, digits=4)}')
-    print(f'Accuracy Score: {accuracy_score(y_true, y_pred, digits=4)}')
+    print(f'F1 Score: {f1_score(y_true, y_pred)}')
+    print(f'Accuracy Score: {accuracy_score(y_true, y_pred)}')
     print(y_true[:5], y_pred[:5])
 
     y_true_new = []
@@ -78,8 +78,8 @@ def run(workspace, feature_type, num_frames, perm):
     print()
     print(f'Excluding other class:')
     print(classification_report(y_true_new, y_pred_new, digits=4))
-    print(f'F1 Score: {f1_score(y_true_new, y_pred_new, digits=4)}')
-    print(f'Accuracy Score: {accuracy_score(y_true_new, y_pred_new, digits=4)}')
+    print(f'F1 Score: {f1_score(y_true_new, y_pred_new)}')
+    print(f'Accuracy Score: {accuracy_score(y_true_new, y_pred_new)}')
     print(y_true_new[:5], y_pred_new[:5])
     
 
