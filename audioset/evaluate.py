@@ -5,7 +5,7 @@ import pandas as pd
 import torch
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
-from sklearn.metrics import classification_report
+from sklearn.metrics import classification_report, f1_score, accuracy_score
 import argparse
 from utils import AudioDataset, Task5Model, configureTorchDevice, getSampleRateString
 from config import target_names, feature_type, num_frames, permutation, batch_size, num_workers, num_classes, sample_rate, workspace
@@ -61,7 +61,27 @@ def run(workspace, feature_type, num_frames, perm):
         class_name = row[0].split('-')[0]
         y_true.append(class_mapping[class_name])
 
+    print(f'Including other class:')
     print(classification_report(y_true, y_pred, digits=4))
+    print(f'F1 Score: {f1_score(y_true, y_pred, digits=4)}')
+    print(f'Accuracy Score: {accuracy_score(y_true, y_pred, digits=4)}')
+    print(y_true[:5], y_pred[:5])
+
+    y_true_new = []
+    y_pred_new = []
+
+    for i, (yt, yp) in enumerate(zip(y_true, y_pred)):
+        if yt != 'other':
+            y_true_new.append(yt)
+            y_pred_new.append(yp)
+            
+    print()
+    print(f'Excluding other class:')
+    print(classification_report(y_true_new, y_pred_new, digits=4))
+    print(f'F1 Score: {f1_score(y_true_new, y_pred_new, digits=4)}')
+    print(f'Accuracy Score: {accuracy_score(y_true_new, y_pred_new, digits=4)}')
+    print(y_true_new[:5], y_pred_new[:5])
+    
 
 
 if __name__ == "__main__":
