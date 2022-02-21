@@ -41,7 +41,7 @@ def run(workspace, feature_type, num_frames, perm):
     # Instantiate the model
     model = Task5Model(num_classes).to(device)
     model.load_state_dict(torch.load('{}/model/{}/model_{}_{}'.format(workspace, getSampleRateString(sample_rate),
-                          feature_type, str(perm[0])+str(perm[1])+str(perm[2]))))
+                          feature_type, str(perm[0])+str(perm[1])+str(perm[2])))['model_state_dict'])
 
     y_pred = []
     for sample in test_loader:
@@ -74,7 +74,7 @@ def run(workspace, feature_type, num_frames, perm):
         if yt != 'other':
             y_true_new.append(yt)
             y_pred_new.append(yp)
-            
+
     print()
     print(f'Excluding other class:')
     print(classification_report(y_true_new, y_pred_new, digits=4))
