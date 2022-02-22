@@ -72,7 +72,7 @@ def run(workspace, feature_type, num_frames, perm):
     y_pred_new = []
 
     for i, (yt, yp) in enumerate(zip(y_true, y_pred)):
-        if yt != 9 and yp!=9:
+        if yt != 9:
             y_true_new.append(yt)
             y_pred_new.append(yp)
 
