@@ -54,7 +54,7 @@ def run(workspace, feature_type, num_frames, perm):
             for i in range(len(outputs)):
                 curr = outputs[i]
                 arg = torch.argmax(curr)
-                y_pred.append(arg.detach().cpu())
+                y_pred.append(arg.detach().cpu().numpy())
     y_true = []
 
     for index, row in test_df.iterrows():
@@ -72,11 +72,11 @@ def run(workspace, feature_type, num_frames, perm):
     y_pred_new = []
 
     for i, (yt, yp) in enumerate(zip(y_true, y_pred)):
-        if yt != 9:
+        if yt != 9 and yp!=9:
             y_true_new.append(yt)
             y_pred_new.append(yp)
 
-    print()
+    print(len(y_true), len(y_true_new), np.unique(y_true_new, return_counts=True))
     print(f'Excluding other class:')
     print(classification_report(y_true_new, y_pred_new, digits=4))
     print(f"Micro F1 Score: {f1_score(y_true_new, y_pred_new, average='micro')}")

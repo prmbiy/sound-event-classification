@@ -15,7 +15,7 @@ length_full_recording = 10
 audio_segment_length = 3
 seed = 42
 
-sample_rate = 16000
+sample_rate = 88200
 threshold = 0.8
 n_fft=2560
 hop_length=694
