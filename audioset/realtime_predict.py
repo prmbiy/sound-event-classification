@@ -76,10 +76,12 @@ def record(args):
             data=wf.readframes(chunk)
 
         length_recorded += 1
-        if len(frames) < audio_segment_length:
+        if len(frames) == audio_segment_length:
+            frames=frames[1:] + [data]
+        else:
             frames.append((data))
+        if len(frames) < audio_segment_length:
             continue
-        frames=frames[1:] + [data]
         audio_segment=bytearray(frames[0])
         for i in range(audio_segment_length-1):
             audio_segment=audio_segment + bytearray(frames[i+1])
@@ -143,7 +145,7 @@ def record(args):
     ax = plt.axes()
     plt.imshow(heatmap_outputs)
     plt.colorbar()
-    ax.set_xticks(np.arange(length_full_recording - audio_segment_length), labels=[f'{i}' for i in range(audio_segment_length+1, length_full_recording+1, 1)])
+    ax.set_xticks(np.arange(length_full_recording - audio_segment_length + 1), labels=[f'{i}' for i in range(audio_segment_length, length_full_recording+1, 1)])
     ax.set_yticks(np.arange(len(labels)), labels=labels)
     if mode == 'localfile':
         plt.title(filename)
