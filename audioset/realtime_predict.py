@@ -1,4 +1,4 @@
-import time
+import os
 import wave
 import librosa
 import torch
@@ -8,7 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from utils import Task5Model, configureTorchDevice, getSampleRateString
 from augmentation.SpecTransforms import ResizeSpectrogram
-from config import target_names, sample_rate, num_frames, gpu, threshold, num_classes, channels, n_fft, hop_length, n_mels, fmin, fmax, audio_segment_length, length_full_recording, resize, feature_type, permutation
+from config import target_names, sample_rate, num_frames, gpu, threshold, num_classes, channels, n_fft, hop_length, n_mels, fmin, fmax, audio_segment_length, length_full_recording, resize, feature_type, permutation, voting, normalised_weights
 
 labels = target_names
 final_outputs = [False] * len(labels)
@@ -21,80 +21,85 @@ def record(args):
     threshold = args.threshold
     mode = args.mode
     perm = args.permutation
+    voting = args.voting
+
     resizeSpec = ResizeSpectrogram(frames=num_frames)
-    channel_means = np.load('./data/statistics/{}/channel_means_{}_{}.npy'.format(getSampleRateString(sample_rate), feature_type, str(perm[0])+str(perm[1])+str(perm[2]))).reshape(1, -1, 1)
-    channel_stds=np.load('./data/statistics/{}/channel_stds_{}_{}.npy'.format(getSampleRateString(sample_rate), feature_type, str(perm[0])+str(perm[1])+str(perm[2]))).reshape(1, -1, 1)
+    channel_means = np.load('./data/statistics/{}/channel_means_{}_{}.npy'.format(getSampleRateString(
+        sample_rate), feature_type, str(perm[0])+str(perm[1])+str(perm[2]))).reshape(1, -1, 1)
+    channel_stds = np.load('./data/statistics/{}/channel_stds_{}_{}.npy'.format(getSampleRateString(
+        sample_rate), feature_type, str(perm[0])+str(perm[1])+str(perm[2]))).reshape(1, -1, 1)
 
     if args.gpu:
-        device=configureTorchDevice()
+        device = configureTorchDevice()
     else:
-        device=configureTorchDevice(False)
+        device = configureTorchDevice(False)
 
-    model=Task5Model(num_classes).to(device)
+    model = Task5Model(num_classes).to(device)
     model.load_state_dict(torch.load(
         './model/{}k/model_{}_{}'.format(sample_rate/1000, feature_type, str(perm[0])+str(perm[1])+str(perm[2])), map_location=device))
-    model=model.eval()
+    model = model.eval()
 
-    length_full_recording=args.length_full_recording
+    length_full_recording = args.length_full_recording
 
     if mode == 'record':
-        audio_segment_length=args.audio_segment_length
-        chunk=sample_rate  # Process/Record in chunks of 44100 samples, ie 1 second at a time
-        fs=sample_rate  # Process/Record at 44100 samples per second
-        sample_format=pyaudio.paInt16  # 16 bits per sample
-        p=pyaudio.PyAudio()
-        sample_width=p.get_sample_size(sample_format)
-        channels=args.channels
+        audio_segment_length = args.audio_segment_length
+        chunk = sample_rate  # Process/Record in chunks of 44100 samples, ie 1 second at a time
+        fs = sample_rate  # Process/Record at 44100 samples per second
+        sample_format = pyaudio.paInt16  # 16 bits per sample
+        p = pyaudio.PyAudio()
+        sample_width = p.get_sample_size(sample_format)
+        channels = args.channels
         print('Recording...')
-        stream=p.open(format=sample_format,
+        stream = p.open(format=sample_format,
                         channels=channels,
                         rate=fs,
                         frames_per_buffer=chunk,
                         input=True)
 
     elif mode == 'localfile':
-        filename=args.filename
+        filename = args.filename
+        output_folder = args.output_folder
         print(f"Processing '{filename}'...")
-        audio_segment_length=args.audio_segment_length
+        audio_segment_length = args.audio_segment_length
 
-        wf=wave.open(filename, "rb")
-        fs=wf.getframerate()
-        channels=wf.getnchannels()
-        sample_width=wf.getsampwidth()
-        chunk=fs
-        sr=fs
+        wf = wave.open(filename, "rb")
+        fs = wf.getframerate()
+        channels = wf.getnchannels()
+        sample_width = wf.getsampwidth()
+        chunk = fs
+        sr = fs
         # print(f'Sample rate for localfile: ', fs)
 
-    frames=[]
+    frames = []
     # frames = [b'110001001', b'10100010110', b'1001111011']
-    length_recorded=0
+    length_recorded = 0
     all_outputs = []
     while length_recorded < length_full_recording:
         if mode == 'record':
-            data=stream.read(chunk)
+            data = stream.read(chunk)
         elif mode == 'localfile':
-            data=wf.readframes(chunk)
+            data = wf.readframes(chunk)
 
         length_recorded += 1
         if len(frames) == audio_segment_length:
-            frames=frames[1:] + [data]
+            frames = frames[1:] + [data]
         else:
             frames.append((data))
         if len(frames) < audio_segment_length:
             continue
-        audio_segment=bytearray(frames[0])
+        audio_segment = bytearray(frames[0])
         for i in range(audio_segment_length-1):
-            audio_segment=audio_segment + bytearray(frames[i+1])
+            audio_segment = audio_segment + bytearray(frames[i+1])
 
-        wf1=wave.open(temp_filename, 'wb')
+        wf1 = wave.open(temp_filename, 'wb')
         wf1.setnchannels(channels)
         wf1.setsampwidth(sample_width)
         wf1.setframerate(fs)
         wf1.writeframes(audio_segment)
         wf1.close()
 
-        wav=librosa.load(temp_filename, sr=sample_rate)[0]
-        melspec=librosa.feature.melspectrogram(
+        wav = librosa.load(temp_filename, sr=sample_rate)[0]
+        melspec = librosa.feature.melspectrogram(
             wav,
             sr=sample_rate,
             n_fft=n_fft,
@@ -103,23 +108,23 @@ def record(args):
             fmin=fmin,
             fmax=fmax)
 
-        sample=librosa.core.power_to_db(melspec)
+        sample = librosa.core.power_to_db(melspec)
         if args.resize:
-            sample=resizeSpec(sample)
-        sample=(sample-channel_means)/channel_stds
-        sample=torch.Tensor(sample)
+            sample = resizeSpec(sample)
+        sample = (sample-channel_means)/channel_stds
+        sample = torch.Tensor(sample)
         if len(sample.shape) <= 3:
-            sample=torch.unsqueeze(sample, 0)
-        inputs=sample.to(device)
+            sample = torch.unsqueeze(sample, 0)
+        inputs = sample.to(device)
         with torch.set_grad_enabled(False):
-            outputs=model(inputs)
-            outputs=torch.sigmoid(outputs)[0].detach().cpu().numpy()
+            outputs = model(inputs)
+            outputs = torch.sigmoid(outputs)[0].detach().cpu().numpy()
             all_outputs.append(outputs)
             # print(length_recorded, outputs, [val if outputs[i]>threshold else '' for i, val in enumerate(labels)])
             print(f'{length_recorded}: ', end='')
             for i, val in enumerate(outputs):
-                final_outputs[i]=final_outputs[i] or val > threshold
-                if(val>threshold):
+                final_outputs[i] = final_outputs[i] or val > threshold
+                if(val > threshold):
                     print(f'{labels[i]}, ', end='')
             print(f' ')
         # if mode=='localfile':
@@ -135,35 +140,67 @@ def record(args):
     elif mode == 'localfile':
         wf.close()
         print(f'Finished processing {length_full_recording}s of {filename} ')
-    final_prediction=[labels[i] if val else "" ]
+    final_prediction = [labels[i] if val else ""]
     print('final_predictions: ', end='')
     for i, val in enumerate(final_outputs):
         if val:
             print(f'{labels[i]}, ', end='')
+
+    all_outputs_numpy = np.array(all_outputs).T
+    if voting == 'simple_average':
+        all_outputs_numpy_copy = all_outputs_numpy.copy()
+        for i in range(all_outputs_numpy.shape[1]):
+            all_outputs_numpy_copy[:, i] = np.mean(
+                all_outputs_numpy[:, :i+1], axis=1)
+        heatmap_outputs = all_outputs_numpy_copy
+    elif voting == 'weighted_average':
+        all_outputs_numpy_copy = all_outputs_numpy.copy()
+        num_weights = len(normalised_weights)
+        for i in range(all_outputs_numpy.shape[1]):
+            if i < num_weights - 1:
+                accumulated_norm_weights = [0]
+                for j in range(num_weights - i):
+                    accumulated_norm_weights[0] += normalised_weights[j]
+                if i > 0:
+                    accumulated_norm_weights.append(normalised_weights[-i:])
+
+                all_outputs_numpy_copy[:, i] = np.average(
+                    all_outputs_numpy[:, :i+1], axis=1, weights=accumulated_norm_weights)
+            else:
+                all_outputs_numpy_copy[:, i] = np.average(
+                    all_outputs_numpy[:, i+1-num_weights:i+1], axis=1, weights=normalised_weights)
+        heatmap_outputs = all_outputs_numpy_copy
+    else:
+        heatmap_outputs = all_outputs_numpy
+
     print()
-    heatmap_outputs = np.array(all_outputs).T
     ax = plt.axes()
     plt.imshow(heatmap_outputs)
     plt.colorbar()
-    ax.set_xticks(np.arange(length_full_recording - audio_segment_length + 1), labels=[f'{i}' for i in range(audio_segment_length, length_full_recording+1, 1)])
+    ax.set_xticks(np.arange(length_full_recording - audio_segment_length + 1),
+                  labels=[f'{i}' for i in range(audio_segment_length, length_full_recording+1, 1)])
     ax.set_yticks(np.arange(len(labels)), labels=labels)
     if mode == 'localfile':
         plt.title(filename)
-        plt.savefig(filename.replace('.wav', '.png'))
+        if output_folder is not None:
+            plt.savefig(os.path.join(output_folder, os.path.basename(
+                filename).replace('.wav', '.png')))
+        else:
+            plt.savefig(filename.replace('.wav', '.png'))
     else:
         plt.title('Recording outputs')
         plt.show()
         plt.savefig('output.png')
 
+
 if __name__ == "__main__":
-    parser=argparse.ArgumentParser(
+    parser = argparse.ArgumentParser(
         description='For making realtime predictons.')
-    subparsers=parser.add_subparsers(
+    subparsers = parser.add_subparsers(
         dest='mode')
 
-
     # mode RECORD
-    parser_record=subparsers.add_parser('record')
+    parser_record = subparsers.add_parser('record')
     parser_record.add_argument(
         '-f', '--feature_type', type=str, default=feature_type)
     parser_record.add_argument(
@@ -177,10 +214,10 @@ if __name__ == "__main__":
         '-a', '--audio_segment_length', type=int, default=audio_segment_length)
     parser_record.add_argument('-r', '--resize', type=bool, default=resize)
     parser_record.add_argument('-c', '--channels', type=int, default=channels)
-
+    parser_record.add_argument('-v', '--voting', type=str, default=voting)
 
     # mode LOCALFILE
-    parser_localfile=subparsers.add_parser('localfile')
+    parser_localfile = subparsers.add_parser('localfile')
     parser_localfile.add_argument(
         '-f', '--feature_type', type=str, default=feature_type)
     parser_localfile.add_argument('-fi', '--filename', type=str,
@@ -195,9 +232,13 @@ if __name__ == "__main__":
     parser_localfile.add_argument('-r', '--resize', type=bool, default=resize)
     parser_localfile.add_argument(
         '-l', '--length_full_recording', type=int, default=length_full_recording)
+    parser_localfile.add_argument('-v', '--voting', type=str, default=voting)
+    parser_localfile.add_argument(
+        '-of', '--output_folder', type=str, default=None)
+
     parser.add_argument('-p', '--permutation', type=int,
                         nargs='+', default=permutation)
 
-    args=parser.parse_args()
+    args = parser.parse_args()
 
     record(args)

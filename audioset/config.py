@@ -15,8 +15,8 @@ length_full_recording = 10
 audio_segment_length = 3
 seed = 42
 
-sample_rate = 88200
-threshold = 0.8
+sample_rate = 16000
+threshold = 0.9
 n_fft=2560
 hop_length=694
 n_mels=128
@@ -31,3 +31,9 @@ target_names = ['breaking', 'chatter', 'crying_sobbing', 'emergency_vehicle', 'e
 num_classes = len(target_names)
 batch_size = num_classes * 1 #for balancedbatchsampler, for every batch to have equal number of samples, the size of each batch should be a multiple of the num of classes
 grad_acc_steps = 2
+
+voting = 'simple_average'
+# voting = 'weighted_average'
+weights = [2, 3, 5]
+sum_weights = sum(weights)
+normalised_weights = np.array(weights)/sum_weights
