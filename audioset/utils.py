@@ -9,8 +9,9 @@ from torch.utils.data import Dataset
 import torchvision
 from augmentation.SpecTransforms import ResizeSpectrogram
 from augmentation.RandomErasing import RandomErasing
-import random
-
+from pann_encoder import Cnn10
+import os
+model_archs = ['mobilenetv2', 'pann_cnn10']
 class_mapping = {}
 class_mapping['breaking'] = 0
 class_mapping['chatter'] = 1
@@ -151,7 +152,8 @@ class BalancedBatchSampler(torch.utils.data.sampler.Sampler):
         for label in self.dataset:
             diff = self.balanced_max - len(self.dataset[label])
             if diff > 0:
-                self.dataset[label].extend(np.random.choice(self.dataset[label], size=diff))
+                self.dataset[label].extend(
+                    np.random.choice(self.dataset[label], size=diff))
         self.keys = list(self.dataset.keys())
         self.currentkey = 0
         self.indices = [-1]*len(self.keys)
@@ -174,25 +176,60 @@ class BalancedBatchSampler(torch.utils.data.sampler.Sampler):
 
 class Task5Model(nn.Module):
 
-    def __init__(self, num_classes):
+    def __init__(self, num_classes, model_arch: str = model_archs[0], model_ckpt_path: str = None):
+        """Initialising model for Task 5 of DCASE
 
+        Args:
+            num_classes (int): Number of classes_
+            model_arch (str, optional): Model architecture to be used. One of ['mobilenetv2', 'pann_cnn10']. Defaults to model_archs[0].
+            model_ckpt_path (str, optional): File path for downloaded pretrained model checkpoint. Defaults to None.
+
+        Raises:
+            Exception: Invalid model_arch paramater passed.
+            Exception: Model checkpoint path does not exist/not found.
+        """
         super().__init__()
+        self.num_classes = num_classes
+
+        if len(model_arch) > 0:
+            if model_arch not in model_archs:
+                raise Exception(
+                    f'Invalid model_arch={model_arch} paramater. Must be one of {model_archs}')
+            self.model_arch = model_arch
+            if len(model_ckpt_path) > 0 and os.path.exists(model_ckpt_path) == False:
+                raise Exception(
+                    f"Model checkpoint path '{model_ckpt_path}' does not exist/not found.")
+            self.model_ckpt_path = model_ckpt_path
 
         self.bw2col = nn.Sequential(
             nn.BatchNorm2d(1),
             nn.Conv2d(1, 10, 1, padding=0), nn.ReLU(),
             nn.Conv2d(10, 3, 1, padding=0), nn.ReLU())
 
-        self.mv2 = torchvision.models.mobilenet_v2(pretrained=True)
+        if self.model_arch == 'mobilenetv2':
+            self.mv2 = torchvision.models.mobilenet_v2(pretrained=True)
 
-        self.final = nn.Sequential(
-            nn.Linear(1280, 512), nn.ReLU(), nn.BatchNorm1d(512),
-            nn.Linear(512, num_classes))
+            self.final = nn.Sequential(
+                nn.Linear(1280, 512), nn.ReLU(), nn.BatchNorm1d(512),
+                nn.Linear(512, num_classes))
+
+        elif self.model_arch == 'pann_cnn10':
+            self.encoder = Cnn10()
+            if self.model_ckpt_path!='':
+                self.encoder.load_state_dict(torch.load(self.model_ckpt_path)['model'], strict = False)
+            self.final = nn.Sequential(
+                nn.Linear(512, 256), nn.ReLU(), nn.BatchNorm1d(512),
+                nn.Linear(256, num_classes))
 
     def forward(self, x):
 
         x = self.bw2col(x)
-        x = self.mv2.features(x)
+        if self.model_arch == 'mobilenetv2':
+            x = self.mv2.features(x)
+           
+        elif self.model_arch == 'pann_cnn10':
+            x = self.encoder(x)
+
         x = x.max(dim=-1)[0].max(dim=-1)[0]
         x = self.final(x)
         return x
