@@ -7,7 +7,22 @@ from joblib import Parallel, delayed
 from glob import glob
 from tqdm import tqdm
 import argparse
-from config_global import n_fft, hop_length, n_mels, fmin, fmax, sample_rate, num_cores
+from config_global import n_fft, hop_length, n_mels, fmin, fmax, sample_rate, num_cores, remove_codec_from_filename
+
+def remove_codec_substr(filename: str, remove_codec_from_filename: bool = remove_codec_from_filename):
+    """Utility function to remove codec substring from audio files in audioset dataset.
+
+    Args:
+        filename (str): Full filepath of audio file
+        remove_codec_from_filename (bool, optional): If true will remove the codec substring. Defaults to remove_codec_from_filename.
+
+    Returns:
+        str: Final filepath to be used.
+    """    
+    output_filename = os.path.basename(filename)
+    if remove_codec_from_filename:
+        output_filename = output_filename[:output_filename.rindex('_')]+'.wav'
+    return output_filename
 
 def compute_melspec(filename, outdir, audio_segment_length):
     try:
@@ -23,7 +38,8 @@ def compute_melspec(filename, outdir, audio_segment_length):
             fmin=fmin,
             fmax=fmax)
         logmel = librosa.core.power_to_db(melspec)
-        np.save(outdir + os.path.basename(filename) + '.npy', logmel)
+        
+        np.save(outdir + remove_codec_substr(filename, remove_codec_from_filename) + '.npy', logmel)
     except ValueError:
         print('ERROR IN:', filename)
 

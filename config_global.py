@@ -4,5 +4,6 @@ hop_length = 694
 n_mels = 128
 fmin = 20
 sample_rate = 16000
+remove_codec_from_filename = True
 fmax = sample_rate/2
 num_cores = -1 # -1 implies take all available cores.
