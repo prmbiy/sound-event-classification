@@ -156,7 +156,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Feature type')
     parser.add_argument('-w', '--workspace', type=str, default=workspace)
     parser.add_argument('-f', '--feature_type', type=str, default=feature_type)
-    parser.add_argument('-ma', '--model_arch', type=str, default='pann_cnn10')
+    parser.add_argument('-ma', '--model_arch', type=str, default='mobilenetv2')
     parser.add_argument('-cp', '--model_ckpt_path', type=str, default='')
     parser.add_argument('-n', '--num_frames', type=int, default=num_frames)
     parser.add_argument('-p', '--permutation', type=int,
