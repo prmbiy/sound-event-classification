@@ -89,7 +89,8 @@ def run(workspace, feature_type, num_frames, perm, seed, resume_training, grad_a
     lowest_val_loss = np.inf
     epochs_without_new_lowest = 0
 
-    if resume_training and os.path.exists(model_path):
+    print(f'resume_training = {resume_training}')
+    if resume_training=='yes' and os.path.exists(model_path):
         checkpoint = torch.load(model_path)
         model.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
@@ -139,6 +140,7 @@ def run(workspace, feature_type, num_frames, perm, seed, resume_training, grad_a
                 'model_state_dict': model.state_dict(),
                 'optimizer_state_dict': optimizer.state_dict()
             }, model_path)
+            print(f'Saving model state at epoch: {i}.')
             epochs_without_new_lowest = 0
         else:
             epochs_without_new_lowest += 1
@@ -162,7 +164,7 @@ if __name__ == "__main__":
     parser.add_argument('-p', '--permutation', type=int,
                         nargs='+', default=permutation)
     parser.add_argument('-s', '--seed', type=int, default=seed)
-    parser.add_argument('-rt', '--resume_training', type=bool, default=True)
+    parser.add_argument('-rt', '--resume_training', type=str, default='yes')
     parser.add_argument('-ga', '--grad_acc_steps',
                         type=int, default=grad_acc_steps)
     args = parser.parse_args()
