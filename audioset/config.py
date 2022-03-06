@@ -40,5 +40,5 @@ normalised_weights = np.array(weights)/sum_weights
 
 # paperspace
 pann_encoder_ckpt_path = '/notebooks/sound-event-classification/audioset/model/Cnn10_mAP=0.380.pth'
-model_arch = 'pann_cnn10'
+model_arch = 'mobilenetv2'
 resume_training = 'yes'

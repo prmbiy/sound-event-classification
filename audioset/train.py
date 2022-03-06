@@ -144,7 +144,7 @@ def run(args):
 
         this_epoch_train_loss /= len(train_df)
         this_epoch_valid_loss /= len(valid_df)
-
+        print(f"train_loss = {this_epoch_train_loss}, val_loss={this_epoch_valid_loss}")
         train_loss_hist.append(this_epoch_train_loss)
         valid_loss_hist.append(this_epoch_valid_loss)
 
@@ -163,7 +163,6 @@ def run(args):
         if epochs_without_new_lowest >= early_stopping:
             break
 
-        print(this_epoch_train_loss, this_epoch_valid_loss)
 
         scheduler.step(this_epoch_valid_loss)
 
