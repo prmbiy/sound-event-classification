@@ -20,7 +20,18 @@ from augmentation.SpecTransforms import TimeMask, FrequencyMask, RandomCycle
 from config import feature_type, num_frames, seed, permutation, batch_size, num_workers, num_classes, learning_rate, amsgrad, patience, verbose, epochs, workspace, sample_rate, early_stopping, grad_acc_steps, model_arch, pann_encoder_ckpt_path, resume_training
 
 
-def run(workspace, feature_type, num_frames, perm, seed, resume_training, grad_acc_steps, model_arch, pann_encoder_ckpt_path, balanced_sampler):
+def run(args):
+
+    workspace = args.workspace
+    feature_type = args.feature_type
+    num_frames = args.num_frames
+    perm = args.permutation
+    seed = args.seed
+    resume_training = args.resume_training
+    grad_acc_steps = args.grad_acc_steps
+    model_arch = args.model_arch
+    pann_encoder_ckpt_path = args.pann_encoder_ckpt_path
+    balanced_sampler = args.balanced_sampler
 
     starting_epoch = 0
     random.seed(seed)
@@ -64,6 +75,7 @@ def run(workspace, feature_type, num_frames, perm, seed, resume_training, grad_a
 
     val_loader = DataLoader(valid_dataset, batch_size,
                             shuffle=False, num_workers=num_workers)
+    print(f'Using balanced_sampler = {balanced_sampler}')
     train_loader = DataLoader(
         train_dataset, batch_size, sampler=BalancedBatchSampler(train_df) if balanced_sampler else train_df, num_workers=num_workers, drop_last=True)
 
@@ -174,5 +186,4 @@ if __name__ == "__main__":
     parser.add_argument('-ga', '--grad_acc_steps',
                         type=int, default=grad_acc_steps)
     args = parser.parse_args()
-    run(args.workspace, args.feature_type,
-        args.num_frames, args.permutation, args.seed, args.resume_training, args.grad_acc_steps, args.model_arch, args.pann_encoder_ckpt_path, args.balanced_sampler)
+    run(args)
