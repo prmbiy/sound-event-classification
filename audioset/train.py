@@ -20,7 +20,7 @@ from augmentation.SpecTransforms import TimeMask, FrequencyMask, RandomCycle
 from config import feature_type, num_frames, seed, permutation, batch_size, num_workers, num_classes, learning_rate, amsgrad, patience, verbose, epochs, workspace, sample_rate, early_stopping, grad_acc_steps, model_arch, pann_encoder_ckpt_path, resume_training
 
 
-def run(workspace, feature_type, num_frames, perm, seed, resume_training, grad_acc_steps, model_arch, pann_encoder_ckpt_path):
+def run(workspace, feature_type, num_frames, perm, seed, resume_training, grad_acc_steps, model_arch, pann_encoder_ckpt_path, balanced_sampler):
 
     starting_epoch = 0
     random.seed(seed)
@@ -65,17 +65,18 @@ def run(workspace, feature_type, num_frames, perm, seed, resume_training, grad_a
     val_loader = DataLoader(valid_dataset, batch_size,
                             shuffle=False, num_workers=num_workers)
     train_loader = DataLoader(
-        train_dataset, batch_size, sampler=BalancedBatchSampler(train_df), num_workers=num_workers, drop_last=True)
+        train_dataset, batch_size, sampler=BalancedBatchSampler(train_df) if balanced_sampler else train_df, num_workers=num_workers, drop_last=True)
 
     # Define the device to be used
     device = configureTorchDevice()
     # Instantiate the model
-    model = Task5Model(num_classes, model_arch, pann_encoder_ckpt_path).to(device)
+    model = Task5Model(num_classes, model_arch,
+                       pann_encoder_ckpt_path).to(device)
     folderpath = '{}/model/{}'.format(workspace,
                                       getSampleRateString(sample_rate))
     os.makedirs(folderpath, exist_ok=True)
     model_path = '{}/model_{}_{}_{}'.format(folderpath,
-                                         feature_type, str(perm[0])+str(perm[1])+str(perm[2]), model_arch)
+                                            feature_type, str(perm[0])+str(perm[1])+str(perm[2]), model_arch)
 
     # Define optimizer, scheduler and loss criteria
     optimizer = optim.Adam(
@@ -90,7 +91,7 @@ def run(workspace, feature_type, num_frames, perm, seed, resume_training, grad_a
     epochs_without_new_lowest = 0
 
     print(f'resume_training = {resume_training}')
-    if resume_training=='yes' and os.path.exists(model_path):
+    if resume_training == 'yes' and os.path.exists(model_path):
         checkpoint = torch.load(model_path)
         model.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
@@ -161,14 +162,17 @@ if __name__ == "__main__":
     parser.add_argument('-w', '--workspace', type=str, default=workspace)
     parser.add_argument('-f', '--feature_type', type=str, default=feature_type)
     parser.add_argument('-ma', '--model_arch', type=str, default=model_arch)
-    parser.add_argument('-cp', '--pann_encoder_ckpt_path', type=str, default=pann_encoder_ckpt_path)
+    parser.add_argument('-cp', '--pann_encoder_ckpt_path',
+                        type=str, default=pann_encoder_ckpt_path)
     parser.add_argument('-n', '--num_frames', type=int, default=num_frames)
     parser.add_argument('-p', '--permutation', type=int,
                         nargs='+', default=permutation)
     parser.add_argument('-s', '--seed', type=int, default=seed)
-    parser.add_argument('-rt', '--resume_training', type=str, default=resume_training)
+    parser.add_argument('-rt', '--resume_training',
+                        type=str, default=resume_training)
+    parser.add_argument('-bs', '--balanced_sampler', type=bool, default=False)
     parser.add_argument('-ga', '--grad_acc_steps',
                         type=int, default=grad_acc_steps)
     args = parser.parse_args()
     run(args.workspace, args.feature_type,
-        args.num_frames, args.permutation, args.seed, args.resume_training, args.grad_acc_steps, args.model_arch, args.pann_encoder_ckpt_path)
+        args.num_frames, args.permutation, args.seed, args.resume_training, args.grad_acc_steps, args.model_arch, args.pann_encoder_ckpt_path, args.balanced_sampler)
