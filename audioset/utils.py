@@ -214,9 +214,8 @@ class Task5Model(nn.Module):
                 nn.Linear(512, num_classes))
 
         elif self.model_arch == 'pann_cnn10':
-            self.modify_input_for_encoder = nn.Sequential(
-                nn.Conv2d(3, 1, 1)
-            )
+            self.reduce_channels_to_1 = nn.Conv2d(3, 1, 1)
+            self.reduce_n_mels = nn.Conv2d(n_mels, 64, 1)
             self.encoder = Cnn10()
             if self.model_ckpt_path!='':
                 self.encoder.load_state_dict(torch.load(self.model_ckpt_path)['model'], strict = False)
@@ -231,9 +230,11 @@ class Task5Model(nn.Module):
             x = self.mv2.features(x)
            
         elif self.model_arch == 'pann_cnn10':
-            x = self.modify_input_for_encoder(x) # -> (batch_size, 1, n_mels, num_frames)
-            x = torch.squeeze(x, 1) # -> (batch_size, n_mels, num_frames)
-            x = x.permute(0, 2, 1)
+            x = self.reduce_channels_to_1(x) # -> (batch_size, 1, n_mels, num_frames)
+            x = x.permute(0, 2, 3, 1) # -> (batch_size, n_mels, num_frames, 1)
+            x = self.reduce_n_mels(x) # -> (batch_size, 64, num_frames, 1)
+            x = torch.squeeze(x, 3) # -> (batch_size, 64, num_frames)
+            x = x.permute(0, 2, 1) # -> (batch_size, num_frames, 64)
             x = self.encoder(x)
 
         x = x.max(dim=-1)[0].max(dim=-1)[0]
