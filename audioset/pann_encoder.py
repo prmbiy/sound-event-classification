@@ -1,5 +1,5 @@
 '''https://github.com/qiuqiangkong/audioset_tagging_cnn/blob/master/pytorch/models.py'''
-
+from config import n_mels
 import torch
 from torch import nn
 import torch.nn.functional as F
@@ -69,7 +69,7 @@ class Cnn10(nn.Module):
 
         super(Cnn10, self).__init__()
 
-        self.bn0 = nn.BatchNorm2d(64)
+        self.bn0 = nn.BatchNorm2d(n_mels)
 
         self.conv_block1 = ConvBlock(in_channels=1, out_channels=64)
         self.conv_block2 = ConvBlock(in_channels=64, out_channels=128)
@@ -82,8 +82,8 @@ class Cnn10(nn.Module):
 
     def forward(self, input):
 
-        x = input.unsqueeze(1)   # -> (batch_size, 1, time_steps, mel_bins)
-        x = x.transpose(1, 3)   # -> (batch_size, mel_bins, time_steps, 1)
+#         x = input.unsqueeze(1)   # -> (batch_size, 1, time_steps, mel_bins)
+        x = input.permute(0, 2, 3, 1)   # -> (batch_size, mel_bins, time_steps, 1)
         x = self.bn0(x)         # -> (batch_size, mel_bins, time_steps, 1)
         x = x.transpose(1, 3)   # -> (batch_size, 1, time_steps, mel_bins)
 

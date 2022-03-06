@@ -217,12 +217,12 @@ class Task5Model(nn.Module):
             self.encoder = Cnn10()
             if self.model_ckpt_path!='':
                 self.encoder.load_state_dict(torch.load(self.model_ckpt_path)['model'], strict = False)
+                print(f'loaded pann_cnn10 pretrained encoder state from {self.model_ckpt_path}')
             self.final = nn.Sequential(
                 nn.Linear(512, 256), nn.ReLU(), nn.BatchNorm1d(512),
                 nn.Linear(256, num_classes))
 
     def forward(self, x):
-
         x = self.bw2col(x)
         if self.model_arch == 'mobilenetv2':
             x = self.mv2.features(x)
