@@ -109,8 +109,6 @@ def run(workspace, feature_type, num_frames, perm, seed, resume_training, grad_a
 
             with torch.set_grad_enabled(True):
                 model = model.train()
-                print(inputs.shape)
-                print(inputs)
                 outputs = model(inputs)
                 loss = criterion(outputs, label)
                 loss.backward()
