@@ -76,8 +76,11 @@ def run(args):
     val_loader = DataLoader(valid_dataset, batch_size,
                             shuffle=False, num_workers=num_workers)
     print(f'Using balanced_sampler = {balanced_sampler}')
+    sampler = train_df
+    if balanced_sampler:
+        sampler = BalancedBatchSampler(train_df)
     train_loader = DataLoader(
-        train_dataset, batch_size, sampler=BalancedBatchSampler(train_df) if balanced_sampler else train_df, num_workers=num_workers, drop_last=True)
+        train_dataset, batch_size, sampler=sampler, num_workers=num_workers, drop_last=True)
 
     # Define the device to be used
     device = configureTorchDevice()
