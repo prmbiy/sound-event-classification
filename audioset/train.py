@@ -76,11 +76,10 @@ def run(args):
     val_loader = DataLoader(valid_dataset, batch_size,
                             shuffle=False, num_workers=num_workers)
     print(f'Using balanced_sampler = {balanced_sampler}')
-    sampler = train_df
     if balanced_sampler:
-        sampler = BalancedBatchSampler(train_df)
-    train_loader = DataLoader(
-        train_dataset, batch_size, sampler=sampler, num_workers=num_workers, drop_last=True)
+        train_loader = DataLoader(train_dataset, batch_size, sampler=BalancedBatchSampler(train_df), num_workers=num_workers, drop_last=True)
+    else:
+        train_loader = DataLoader(train_dataset, batch_size, shuffle=True, num_workers=num_workers, drop_last=True)
 
     # Define the device to be used
     device = configureTorchDevice()
@@ -149,7 +148,8 @@ def run(args):
 
         this_epoch_train_loss /= len(train_df)
         this_epoch_valid_loss /= len(valid_df)
-        print(f"train_loss = {this_epoch_train_loss}, val_loss={this_epoch_valid_loss}")
+        print(
+            f"train_loss = {this_epoch_train_loss}, val_loss={this_epoch_valid_loss}")
         train_loss_hist.append(this_epoch_train_loss)
         valid_loss_hist.append(this_epoch_valid_loss)
 
@@ -167,7 +167,6 @@ def run(args):
 
         if epochs_without_new_lowest >= early_stopping:
             break
-
 
         scheduler.step(this_epoch_valid_loss)
 
