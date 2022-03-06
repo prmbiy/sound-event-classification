@@ -1,6 +1,6 @@
 from typing import Iterator
 import pandas as pd
-from config import feature_type, permutation, sample_rate, num_frames
+from config import feature_type, permutation, sample_rate, num_frames, n_mels
 import numpy as np
 import torch
 import torch.nn as nn
@@ -214,6 +214,9 @@ class Task5Model(nn.Module):
                 nn.Linear(512, num_classes))
 
         elif self.model_arch == 'pann_cnn10':
+            self.modify_input_for_encoder = nn.Sequential(
+                nn.Conv2d(3, 1, 1)
+            )
             self.encoder = Cnn10()
             if self.model_ckpt_path!='':
                 self.encoder.load_state_dict(torch.load(self.model_ckpt_path)['model'], strict = False)
@@ -223,11 +226,14 @@ class Task5Model(nn.Module):
                 nn.Linear(256, num_classes))
 
     def forward(self, x):
-        x = self.bw2col(x)
+        x = self.bw2col(x) # -> (batch_size, 3, n_mels, num_frames)
         if self.model_arch == 'mobilenetv2':
             x = self.mv2.features(x)
            
         elif self.model_arch == 'pann_cnn10':
+            x = self.modify_input_for_encoder(x) # -> (batch_size, 1, n_mels, num_frames)
+            x = torch.squeeze(x, 1) # -> (batch_size, n_mels, num_frames)
+            x = x.permute(0, 2, 1)
             x = self.encoder(x)
 
         x = x.max(dim=-1)[0].max(dim=-1)[0]
