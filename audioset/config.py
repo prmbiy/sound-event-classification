@@ -37,3 +37,8 @@ voting = 'simple_average'
 weights = [2, 3, 5]
 sum_weights = sum(weights)
 normalised_weights = np.array(weights)/sum_weights
+
+# paperspace
+pann_encoder_ckpt_path = '/notebooks/sound-event-classification/audioset/model/Cnn10_mAP=0.380.pth'
+model_arch = 'pann_cnn10'
+resume_training = 'yes'
