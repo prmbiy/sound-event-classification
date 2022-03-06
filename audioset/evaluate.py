@@ -15,7 +15,7 @@ for i, target in enumerate(target_names):
     class_mapping[target] = i
 
 
-def run(workspace, feature_type, num_frames, perm, model_arch, pann_encoder_ckpt_path):
+def run(workspace, feature_type, num_frames, perm, model_arch):
 
     folds = []
     for i in range(5):
@@ -39,7 +39,7 @@ def run(workspace, feature_type, num_frames, perm, model_arch, pann_encoder_ckpt
     device = configureTorchDevice()
 
     # Instantiate the model
-    model = Task5Model(num_classes, model_arch, pann_encoder_ckpt_path).to(device)
+    model = Task5Model(num_classes, model_arch).to(device)
     model.load_state_dict(torch.load('{}/model/{}/model_{}_{}'.format(workspace, getSampleRateString(sample_rate),
                           feature_type, str(perm[0])+str(perm[1])+str(perm[2])))['model_state_dict'])
 
@@ -95,4 +95,4 @@ if __name__ == "__main__":
     parser.add_argument('-p', '--permutation', type=int,
                         nargs='+', default=permutation)
     args = parser.parse_args()
-    run(args.workspace, args.feature_type, args.num_frames, args.permutation, args.model_arch, args.pann_encoder_ckpt_path)
+    run(args.workspace, args.feature_type, args.num_frames, args.permutation, args.model_arch)
