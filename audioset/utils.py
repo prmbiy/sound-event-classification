@@ -176,13 +176,13 @@ class BalancedBatchSampler(torch.utils.data.sampler.Sampler):
 
 class Task5Model(nn.Module):
 
-    def __init__(self, num_classes, model_arch: str = model_archs[0], model_ckpt_path: str = None):
+    def __init__(self, num_classes, model_arch: str = model_archs[0], pann_encoder_ckpt_path: str = ''):
         """Initialising model for Task 5 of DCASE
 
         Args:
             num_classes (int): Number of classes_
             model_arch (str, optional): Model architecture to be used. One of ['mobilenetv2', 'pann_cnn10']. Defaults to model_archs[0].
-            model_ckpt_path (str, optional): File path for downloaded pretrained model checkpoint. Defaults to None.
+            pann_encoder_ckpt_path (str, optional): File path for downloaded pretrained model checkpoint. Defaults to None.
 
         Raises:
             Exception: Invalid model_arch paramater passed.
@@ -196,10 +196,10 @@ class Task5Model(nn.Module):
                 raise Exception(
                     f'Invalid model_arch={model_arch} paramater. Must be one of {model_archs}')
             self.model_arch = model_arch
-            if len(model_ckpt_path) > 0 and os.path.exists(model_ckpt_path) == False:
+            if len(pann_encoder_ckpt_path) > 0 and os.path.exists(pann_encoder_ckpt_path) == False:
                 raise Exception(
-                    f"Model checkpoint path '{model_ckpt_path}' does not exist/not found.")
-            self.model_ckpt_path = model_ckpt_path
+                    f"Model checkpoint path '{pann_encoder_ckpt_path}' does not exist/not found.")
+            self.pann_encoder_ckpt_path = pann_encoder_ckpt_path
 
         self.bw2col = nn.Sequential(
             nn.BatchNorm2d(1),
@@ -217,9 +217,9 @@ class Task5Model(nn.Module):
             self.reduce_channels_to_1 = nn.Conv2d(3, 1, 1)
             self.reduce_n_mels = nn.Conv2d(n_mels, 64, 1)
             self.encoder = Cnn10()
-            if self.model_ckpt_path!='':
-                self.encoder.load_state_dict(torch.load(self.model_ckpt_path)['model'], strict = False)
-                print(f'loaded pann_cnn10 pretrained encoder state from {self.model_ckpt_path}')
+            if self.pann_encoder_ckpt_path!='':
+                self.encoder.load_state_dict(torch.load(self.pann_encoder_ckpt_path)['model'], strict = False)
+                print(f'loaded pann_cnn10 pretrained encoder state from {self.pann_encoder_ckpt_path}')
             self.final = nn.Sequential(
                 nn.Linear(512, 256), nn.ReLU(), nn.BatchNorm1d(256),
                 nn.Linear(256, num_classes))

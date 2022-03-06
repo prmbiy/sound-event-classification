@@ -20,7 +20,7 @@ from augmentation.SpecTransforms import TimeMask, FrequencyMask, RandomCycle
 from config import feature_type, num_frames, seed, permutation, batch_size, num_workers, num_classes, learning_rate, amsgrad, patience, verbose, epochs, workspace, sample_rate, early_stopping, grad_acc_steps
 
 
-def run(workspace, feature_type, num_frames, perm, seed, resume_training, grad_acc_steps, model_arch, model_ckpt_path):
+def run(workspace, feature_type, num_frames, perm, seed, resume_training, grad_acc_steps, model_arch, pann_encoder_ckpt_path):
 
     starting_epoch = 0
     random.seed(seed)
@@ -70,7 +70,7 @@ def run(workspace, feature_type, num_frames, perm, seed, resume_training, grad_a
     # Define the device to be used
     device = configureTorchDevice()
     # Instantiate the model
-    model = Task5Model(num_classes, model_arch, model_ckpt_path).to(device)
+    model = Task5Model(num_classes, model_arch, pann_encoder_ckpt_path).to(device)
     folderpath = '{}/model/{}'.format(workspace,
                                       getSampleRateString(sample_rate))
     os.makedirs(folderpath, exist_ok=True)
@@ -109,6 +109,8 @@ def run(workspace, feature_type, num_frames, perm, seed, resume_training, grad_a
 
             with torch.set_grad_enabled(True):
                 model = model.train()
+                # print(inputs.shape)
+                # print(inputs)
                 outputs = model(inputs)
                 loss = criterion(outputs, label)
                 loss.backward()
@@ -159,7 +161,7 @@ if __name__ == "__main__":
     parser.add_argument('-w', '--workspace', type=str, default=workspace)
     parser.add_argument('-f', '--feature_type', type=str, default=feature_type)
     parser.add_argument('-ma', '--model_arch', type=str, default='mobilenetv2')
-    parser.add_argument('-cp', '--model_ckpt_path', type=str, default='')
+    parser.add_argument('-cp', '--pann_encoder_ckpt_path', type=str, default='')
     parser.add_argument('-n', '--num_frames', type=int, default=num_frames)
     parser.add_argument('-p', '--permutation', type=int,
                         nargs='+', default=permutation)
@@ -169,4 +171,4 @@ if __name__ == "__main__":
                         type=int, default=grad_acc_steps)
     args = parser.parse_args()
     run(args.workspace, args.feature_type,
-        args.num_frames, args.permutation, args.seed, args.resume_training, args.grad_acc_steps, args.model_arch, args.model_ckpt_path)
+        args.num_frames, args.permutation, args.seed, args.resume_training, args.grad_acc_steps, args.model_arch, args.pann_encoder_ckpt_path)
