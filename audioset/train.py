@@ -125,6 +125,8 @@ def run(args):
                 # print(inputs.shape)
                 # print(inputs)
                 outputs = model(inputs)
+                print(f'label: \n{label}')
+                print(f'model outputs: \n{outputs}')
                 loss = criterion(outputs, label)
                 loss.backward()
                 if batch % grad_acc_steps == 0 or batch % len(train_loader) == 0:
