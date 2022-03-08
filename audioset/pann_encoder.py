@@ -81,7 +81,10 @@ class Cnn10(nn.Module):
         init_bn(self.bn0)
 
     def forward(self, input):
-
+        # 1. Try pooling/linear layer
+        # 2. Or change bn0 to 128, but ideally avoid this step right
+        # 3. Remove all intermediate layers between input and pann 
+        
         x = input.unsqueeze(1)   # -> (batch_size, 1, time_steps, mel_bins)
         x = x.transpose(1, 3)   # -> (batch_size, mel_bins, time_steps, 1)
         x = self.bn0(x)         # -> (batch_size, mel_bins, time_steps, 1)

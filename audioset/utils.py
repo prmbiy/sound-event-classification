@@ -201,12 +201,11 @@ class Task5Model(nn.Module):
                     f"Model checkpoint path '{pann_encoder_ckpt_path}' does not exist/not found.")
             self.pann_encoder_ckpt_path = pann_encoder_ckpt_path
 
-        self.bw2col = nn.Sequential(
-            nn.BatchNorm2d(1),
-            nn.Conv2d(1, 10, 1, padding=0), nn.ReLU(),
-            nn.Conv2d(10, 3, 1, padding=0), nn.ReLU())
-
         if self.model_arch == 'mobilenetv2':
+            self.bw2col = nn.Sequential(
+                nn.BatchNorm2d(1),
+                nn.Conv2d(1, 10, 1, padding=0), nn.ReLU(),
+                nn.Conv2d(10, 3, 1, padding=0), nn.ReLU())
             self.mv2 = torchvision.models.mobilenet_v2(pretrained=True)
 
             self.final = nn.Sequential(
@@ -214,8 +213,7 @@ class Task5Model(nn.Module):
                 nn.Linear(512, num_classes))
 
         elif self.model_arch == 'pann_cnn10':
-            self.reduce_channels_to_1 = nn.Conv2d(3, 1, 1)
-            self.reduce_n_mels = nn.Conv2d(n_mels, 64, 1)
+            self.AveragePool = nn.AvgPool2d((1, 2), (1, 2))
             self.encoder = Cnn10()
             if self.pann_encoder_ckpt_path!='':
                 self.encoder.load_state_dict(torch.load(self.pann_encoder_ckpt_path)['model'], strict = False)
@@ -225,20 +223,20 @@ class Task5Model(nn.Module):
                 nn.Linear(256, num_classes))
 
     def forward(self, x):
-        x = self.bw2col(x) # -> (batch_size, 3, n_mels, num_frames)
         if self.model_arch == 'mobilenetv2':
+            x = self.bw2col(x) # -> (batch_size, 3, n_mels, num_frames)
             x = self.mv2.features(x)
            
         elif self.model_arch == 'pann_cnn10':
-            x = self.reduce_channels_to_1(x) # -> (batch_size, 1, n_mels, num_frames)
-            x = x.permute(0, 2, 3, 1) # -> (batch_size, n_mels, num_frames, 1)
-            x = self.reduce_n_mels(x) # -> (batch_size, 64, num_frames, 1)
-            x = torch.squeeze(x, 3) # -> (batch_size, 64, num_frames)
-            x = x.permute(0, 2, 1) # -> (batch_size, num_frames, 64)
+            x = x # -> (batch_size, 1, n_mels, num_frames)
+            x = x.permute(0, 1, 3, 2) # -> (batch_size, 1, num_frames, n_mels)
+            x = self.AveragePool(x) # -> (batch_size, 1, num_frames, n_mels/2)
+            x = torch.squeeze(x, 1) # -> (batch_size, num_frames, 64)
             x = self.encoder(x)
-
-        x = x.max(dim=-1)[0].max(dim=-1)[0]
-        x = self.final(x)
+        # x-> (batch_size, 1280/512, H, W)
+        x = x.max(dim=-1)[0].max(dim=-1)[0] # change it to mean
+        # x = torch.mean(x, dim=(-1, -2))
+        x = self.final(x)# -> (batch_size, num_classes)
         return x
 
 
