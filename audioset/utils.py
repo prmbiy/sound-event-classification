@@ -204,7 +204,7 @@ class Task5Model(nn.Module):
         if self.model_arch == 'mobilenetv2':
             self.bw2col = nn.Sequential(
                 nn.BatchNorm2d(1),
-                nn.Conv2d(1, 10, 1, padding=0), nn.ReLU(),
+                nn.Conv2d(1, 10, (64, 1), padding=0), nn.ReLU(),
                 nn.Conv2d(10, 3, 1, padding=0), nn.ReLU())
             self.mv2 = torchvision.models.mobilenet_v2(pretrained=True)
 
