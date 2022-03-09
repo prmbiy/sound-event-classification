@@ -11,6 +11,15 @@ from augmentation.SpecTransforms import ResizeSpectrogram
 from augmentation.RandomErasing import RandomErasing
 from pann_encoder import Cnn10
 import os
+
+__author__ = "Andrew Koh Jin Jie, Yan Zhen"
+__credits__ = ["Prof Chng Eng Siong", "Yan Zhen", "Tanmay Khandelwal", "Anushka Jain"]
+__license__ = "GPL"
+__version__ = "0.0.0"
+__maintainer__ = "Soham Tiwari"
+__email__ = "soham.tiwari800@gmail.com"
+__status__ = "Development"
+
 model_archs = ['mobilenetv2', 'pann_cnn10']
 class_mapping = {}
 class_mapping['breaking'] = 0

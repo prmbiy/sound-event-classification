@@ -15,6 +15,14 @@ from torch.utils.data import Dataset, DataLoader
 from utils import Task5Model, AudioDataset
 from sklearn.metrics import classification_report, roc_auc_score, accuracy_score, average_precision_score
 
+__author__ = "Andrew Koh Jin Jie and Yan Zhen"
+__credits__ = ["Prof Chng Eng Siong", "Yan Zhen", "Tanmay Khandelwal"]
+__license__ = "GPL"
+__version__ = "0.0.0"
+__maintainer__ = "Yan Zhen"
+__email__ = "LEEY0204@e.ntu.edu.sg"
+__status__ = "Development"
+
 class_mapping = {}
 class_mapping['breaking'] = 0
 class_mapping['chatter'] = 1

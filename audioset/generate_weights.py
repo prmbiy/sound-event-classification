@@ -17,6 +17,14 @@ from torchvision import datasets, transforms, models
 from SpecTransforms import ResizeSpectrogram
 from utils import Task5Model, prepare_data, AudioDataset
 
+__author__ = "Andrew Koh Jin Jie and Yan Zhen"
+__credits__ = ["Prof Chng Eng Siong", "Yan Zhen", "Tanmay Khandelwal"]
+__license__ = "GPL"
+__version__ = "0.0.0"
+__maintainer__ = "Yan Zhen"
+__email__ = "LEEY0204@e.ntu.edu.sg"
+__status__ = "Development"
+
 class_mapping = {}
 class_mapping['breaking'] = 0
 class_mapping['chatter'] = 1

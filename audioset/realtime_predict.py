@@ -10,6 +10,14 @@ from utils import Task5Model, configureTorchDevice, getSampleRateString
 from augmentation.SpecTransforms import ResizeSpectrogram
 from config import target_names, sample_rate, num_frames, gpu, threshold, num_classes, channels, n_fft, hop_length, n_mels, fmin, fmax, audio_segment_length, length_full_recording, resize, feature_type, permutation, voting, normalised_weights
 
+__author__ = "Andrew Koh Jin Jie, Anushka Jain and Soham Tiwari"
+__credits__ = ["Prof Chng Eng Siong", "Yan Zhen", "Tanmay Khandelwal"]
+__license__ = "GPL"
+__version__ = "0.0.0"
+__maintainer__ = "Soham Tiwari"
+__email__ = "soham.tiwari800@gmail.com"
+__status__ = "Development"
+
 labels = target_names
 final_outputs = [False] * len(labels)
 temp_filename = "test.wav"

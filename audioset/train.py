@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import pandas as pd
 import numpy as np
 from zmq import device
@@ -17,9 +18,16 @@ import argparse
 from utils import AudioDataset, Task5Model, configureTorchDevice, getSampleRateString, BalancedBatchSampler
 from augmentation.SpecTransforms import TimeMask, FrequencyMask, RandomCycle
 from torchsummary import summary
-
 from config import feature_type, num_frames, seed, permutation, batch_size, num_workers, num_classes, learning_rate, amsgrad, patience, verbose, epochs, workspace, sample_rate, early_stopping, grad_acc_steps, model_arch, pann_encoder_ckpt_path, resume_training, n_mels
 
+
+__author__ = "Andrew, Yan Zhen, Anushka and Soham"
+__credits__ = ["Prof Chng Eng Siong", "Yan Zhen", "Tanmay Khandelwal"]
+__license__ = "GPL"
+__version__ = "0.0.0"
+__maintainer__ = "Soham Tiwari"
+__email__ = "soham.tiwari800@gmail.com"
+__status__ = "Development"
 
 def run(args):
 

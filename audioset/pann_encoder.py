@@ -3,6 +3,15 @@
 import torch
 from torch import nn
 import torch.nn.functional as F
+
+__author__ = "Andrew Koh Jin Jie, Anushka Jain and Soham Tiwari"
+__credits__ = ["Prof Chng Eng Siong", "Yan Zhen", "Tanmay Khandelwal"]
+__license__ = "GPL"
+__version__ = "0.0.0"
+__maintainer__ = "Soham Tiwari"
+__email__ = "soham.tiwari800@gmail.com"
+__status__ = "Development"
+
 device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
 def init_layer(layer):
     """Initialize a Linear or Convolutional layer. """

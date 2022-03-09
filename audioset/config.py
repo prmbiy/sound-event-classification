@@ -1,4 +1,13 @@
 import numpy as np
+
+__author__ = "Andrew Koh Jin Jie, Anushka Jain and Soham Tiwari"
+__credits__ = ["Prof Chng Eng Siong", "Yan Zhen", "Tanmay Khandelwal"]
+__license__ = "GPL"
+__version__ = "0.0.0"
+__maintainer__ = "Soham Tiwari"
+__email__ = "soham.tiwari800@gmail.com"
+__status__ = "Development"
+
 num_workers = 2
 feature_type = 'logmelspec'
 num_bins = 128

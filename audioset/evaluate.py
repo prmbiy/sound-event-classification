@@ -10,6 +10,14 @@ import argparse
 from utils import AudioDataset, Task5Model, configureTorchDevice, getSampleRateString
 from config import target_names, feature_type, num_frames, permutation, batch_size, num_workers, num_classes, sample_rate, workspace
 
+__author__ = "Andrew Koh Jin Jie, Anushka Jain and Soham Tiwari"
+__credits__ = ["Prof Chng Eng Siong", "Yan Zhen", "Tanmay Khandelwal"]
+__license__ = "GPL"
+__version__ = "0.0.0"
+__maintainer__ = "Soham Tiwari"
+__email__ = "soham.tiwari800@gmail.com"
+__status__ = "Development"
+
 class_mapping = {}
 for i, target in enumerate(target_names):
     class_mapping[target] = i

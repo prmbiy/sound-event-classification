@@ -6,6 +6,13 @@ import os
 from config import feature_type, num_bins, sample_rate, workspace
 from utils import getSampleRateString
 
+__author__ = "Andrew Koh Jin Jie, Yan Zhen"
+__credits__ = ["Prof Chng Eng Siong", "Yan Zhen", "Tanmay Khandelwal", "Anushka Jain"]
+__license__ = "GPL"
+__version__ = "0.0.0"
+__maintainer__ = "Soham Tiwari"
+__email__ = "soham.tiwari800@gmail.com"
+__status__ = "Development"
 
 def run(workspace, feature_type, num_bins, perm):
     #    if '8k' in feature_type:

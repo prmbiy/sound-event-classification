@@ -7,6 +7,14 @@ import pickle
 import numpy as np
 from config import workspace, num_frames, num_classes, feature_type, permutation, seed
 
+__author__ = "Andrew Koh Jin Jie, Anushka Jain and Soham Tiwari"
+__credits__ = ["Prof Chng Eng Siong", "Yan Zhen", "Tanmay Khandelwal"]
+__license__ = "GPL"
+__version__ = "0.0.0"
+__maintainer__ = "Soham Tiwari"
+__email__ = "soham.tiwari800@gmail.com"
+__status__ = "Development"
+
 class HyperParamsOptimizer(object):
     def __init__(self, score_calculator, save_dict, learning_rate=1e-2, epochs=100,
                  step=0.01, max_search=5):
