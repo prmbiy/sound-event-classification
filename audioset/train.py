@@ -16,8 +16,9 @@ import random
 import argparse
 from utils import AudioDataset, Task5Model, configureTorchDevice, getSampleRateString, BalancedBatchSampler
 from augmentation.SpecTransforms import TimeMask, FrequencyMask, RandomCycle
+from torchsummary import summary
 
-from config import feature_type, num_frames, seed, permutation, batch_size, num_workers, num_classes, learning_rate, amsgrad, patience, verbose, epochs, workspace, sample_rate, early_stopping, grad_acc_steps, model_arch, pann_encoder_ckpt_path, resume_training
+from config import feature_type, num_frames, seed, permutation, batch_size, num_workers, num_classes, learning_rate, amsgrad, patience, verbose, epochs, workspace, sample_rate, early_stopping, grad_acc_steps, model_arch, pann_encoder_ckpt_path, resume_training, n_mels
 
 
 def run(args):
@@ -86,6 +87,8 @@ def run(args):
     # Instantiate the model
     model = Task5Model(num_classes, model_arch,
                        pann_encoder_ckpt_path).to(device)
+    print(f'Using {model_arch} model.')
+    summary(model, (n_mels, num_frames))
     folderpath = '{}/model/{}'.format(workspace,
                                       getSampleRateString(sample_rate))
     os.makedirs(folderpath, exist_ok=True)

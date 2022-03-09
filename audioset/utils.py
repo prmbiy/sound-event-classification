@@ -204,7 +204,7 @@ class Task5Model(nn.Module):
         if self.model_arch == 'mobilenetv2':
             self.bw2col = nn.Sequential(
                 nn.BatchNorm2d(1),
-                nn.Conv2d(1, 10, (64, 1), padding=0), nn.ReLU(),
+                nn.Conv2d(1, 10, (64, 2), padding=0), nn.ReLU(), # (128, 656) -> (64, 656) 
                 nn.Conv2d(10, 3, 1, padding=0), nn.ReLU())
             self.mv2 = torchvision.models.mobilenet_v2(pretrained=True)
 
@@ -230,12 +230,13 @@ class Task5Model(nn.Module):
         elif self.model_arch == 'pann_cnn10':
             x = x # -> (batch_size, 1, n_mels, num_frames)
             x = x.permute(0, 1, 3, 2) # -> (batch_size, 1, num_frames, n_mels)
-            x = self.AveragePool(x) # -> (batch_size, 1, num_frames, n_mels/2)
+            x = self.AveragePool(x) # -> (batch_size, 1, num_frames, n_mels/2) 
+            # try to use a linear layer here.
             x = torch.squeeze(x, 1) # -> (batch_size, num_frames, 64)
             x = self.encoder(x)
         # x-> (batch_size, 1280/512, H, W)
-        x = x.max(dim=-1)[0].max(dim=-1)[0] # change it to mean
-        # x = torch.mean(x, dim=(-1, -2))
+        # x = x.max(dim=-1)[0].max(dim=-1)[0] # change it to mean
+        x = torch.mean(x, dim=(-1, -2))
         x = self.final(x)# -> (batch_size, num_classes)
         return x
 
