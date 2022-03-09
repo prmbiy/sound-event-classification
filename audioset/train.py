@@ -88,7 +88,7 @@ def run(args):
     model = Task5Model(num_classes, model_arch,
                        pann_encoder_ckpt_path).to(device)
     print(f'Using {model_arch} model.')
-    summary(model, (n_mels, num_frames))
+    summary(model, (1, n_mels, num_frames))
     folderpath = '{}/model/{}'.format(workspace,
                                       getSampleRateString(sample_rate))
     os.makedirs(folderpath, exist_ok=True)
