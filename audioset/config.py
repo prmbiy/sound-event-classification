@@ -26,8 +26,8 @@ seed = 42
 
 sample_rate = 16000
 threshold = 0.9
-n_fft=2560
-hop_length=694
+n_fft=(2560*sample_rate)//44100
+hop_length=(694*sample_rate)//44100
 n_mels=128
 fmin=20
 fmax=sample_rate/2
