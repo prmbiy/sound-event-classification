@@ -40,6 +40,17 @@ The `train.py` file for DCASE takes in 3 arguments: feature type, number of time
 #### Audioset
 Other than the three arguments above, the `train.py` file for Audioset takes in an additional argument to specify the training, validation and testing folds. For training on folds 0, 1 and 2, validating on 3 and testing on 4, run <br/>
 `python train.py -w $WORKSPACE -f logmelspec -n 636 -p 0 1 2 3 4` <br/>
+Different flags you can use with `python train.py` are:
+- `-w`, `--workspace`: To provide the path of the active workspace.
+- `-f`, `--feature_type`: Default = `logmelspec`. To provide which model feature to use for training.
+- `-ma`, `--model_arch`: Which model architecture to use when training. Default = `mobilenetv2`. Options: `[mobilenetv2, pann_cnn10]`
+- `-cp`, `--pann_encoder_ckpt_path`: Path of the pretrained model weights for PANN architecture. Only required when `model_arch=pann_cnn10`
+- `-n`, `--num_frames`:Number of frames in generated logmelspecs.
+- `-p`, `--permutation`: Specifies the data splits used for training and validation. Default `p = 0 1 2 3 4`
+- `-s`, `--seed`: Int seed value to set for torch and numpy. Helpful in replicating results.
+- `-rt`, `--resume_training`: Whether to resume training from the last epoch it stopped at. Will automatically load the previous model weights. Default `'yes'`
+- `-bs`, `--balanced_sampler`: Whether to use a balanced sampler when loading data. Default = `False`
+- `-ga`, `--grad_acc_steps`: Number of epochs to perform gradient accumulation on. Default = `2`
 ### 5. Validating
 For validation, run `evaluate.py` with the same arguments as above but without the random seed argument.
 ### 6. Feature Fusion
