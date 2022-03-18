@@ -205,10 +205,7 @@ class Task5Model(nn.Module):
                 raise Exception(
                     f'Invalid model_arch={model_arch} paramater. Must be one of {model_archs}')
             self.model_arch = model_arch
-            if len(pann_encoder_ckpt_path) > 0 and os.path.exists(pann_encoder_ckpt_path) == False:
-                raise Exception(
-                    f"Model checkpoint path '{pann_encoder_ckpt_path}' does not exist/not found.")
-            self.pann_encoder_ckpt_path = pann_encoder_ckpt_path
+            
 
         if self.model_arch == 'mobilenetv2':
             self.bw2col = nn.Sequential(
@@ -223,6 +220,10 @@ class Task5Model(nn.Module):
                 nn.Linear(512, num_classes))
 
         elif self.model_arch == 'pann_cnn10':
+            if len(pann_encoder_ckpt_path) > 0 and os.path.exists(pann_encoder_ckpt_path) == False:
+                raise Exception(
+                    f"Model checkpoint path '{pann_encoder_ckpt_path}' does not exist/not found.")
+            self.pann_encoder_ckpt_path = pann_encoder_ckpt_path
             self.AveragePool = nn.AvgPool2d((1, 2), (1, 2))
             self.encoder = Cnn10()
             if self.pann_encoder_ckpt_path!='':

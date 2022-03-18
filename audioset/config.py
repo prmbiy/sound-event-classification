@@ -41,8 +41,8 @@ num_classes = len(target_names)
 batch_size = num_classes * 1 #for balancedbatchsampler, for every batch to have equal number of samples, the size of each batch should be a multiple of the num of classes
 grad_acc_steps = 2
 
-voting = 'simple_average'
-# voting = 'weighted_average'
+# voting = 'simple_average'
+voting = 'weighted_average'
 weights = [2, 3, 5]
 sum_weights = sum(weights)
 normalised_weights = np.array(weights)/sum_weights
