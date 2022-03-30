@@ -26,19 +26,21 @@ seed = 42
 
 sample_rate = 16000
 threshold = 0.9
-n_fft=(2560*sample_rate)//44100
-hop_length=(694*sample_rate)//44100
-n_mels=128
-fmin=20
-fmax=sample_rate/2
+n_fft = (2560*sample_rate)//44100
+hop_length = (694*sample_rate)//44100
+n_mels = 128
+fmin = 20
+fmax = sample_rate/2
 # num_frames = 200
 num_frames = int(np.ceil(sample_rate*length_full_recording/hop_length))
 
 permutation = [0, 1, 2, 3, 4]
 workspace = '/notebooks/sound-event-classification/audioset'
-target_names = ['breaking', 'chatter', 'crying_sobbing', 'emergency_vehicle', 'explosion', 'gunshot_gunfire', 'motor_vehicle_road', 'screaming', 'siren', 'others']
+target_names = ['breaking', 'chatter', 'crying_sobbing', 'emergency_vehicle',
+                'explosion', 'gunshot_gunfire', 'motor_vehicle_road', 'screaming', 'siren', 'others']
 num_classes = len(target_names)
-batch_size = num_classes * 1 #for balancedbatchsampler, for every batch to have equal number of samples, the size of each batch should be a multiple of the num of classes
+# for balancedbatchsampler, for every batch to have equal number of samples, the size of each batch should be a multiple of the num of classes
+batch_size = num_classes * 1
 grad_acc_steps = 2
 
 # voting = 'simple_average'
@@ -46,6 +48,12 @@ voting = 'weighted_average'
 weights = [2, 3, 5]
 sum_weights = sum(weights)
 normalised_weights = np.array(weights)/sum_weights
+
+# CBAM
+use_cbam = True
+cbam_channels = 512
+cbam_reduction_factor = 16
+cbam_kernel_size = 7
 
 # paperspace
 pann_encoder_ckpt_path = '/notebooks/sound-event-classification/audioset/model/Cnn10_mAP=0.380.pth'

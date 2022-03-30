@@ -1,6 +1,7 @@
 from typing import Iterator
+from matplotlib.style import use
 import pandas as pd
-from config import feature_type, permutation, sample_rate, num_frames, n_mels
+from config import feature_type, permutation, sample_rate, num_frames, use_cbam, cbam_kernel_size, cbam_reduction_factor
 import numpy as np
 import torch
 import torch.nn as nn
@@ -9,6 +10,7 @@ from torch.utils.data import Dataset
 import torchvision
 from augmentation.SpecTransforms import ResizeSpectrogram
 from augmentation.RandomErasing import RandomErasing
+from attention.CBAM import CBAMBlock
 from pann_encoder import Cnn10
 import os
 
@@ -185,7 +187,7 @@ class BalancedBatchSampler(torch.utils.data.sampler.Sampler):
 
 class Task5Model(nn.Module):
 
-    def __init__(self, num_classes, model_arch: str = model_archs[0], pann_encoder_ckpt_path: str = ''):
+    def __init__(self, num_classes, model_arch: str = model_archs[0], pann_encoder_ckpt_path: str = '', use_cbam: bool = use_cbam):
         """Initialising model for Task 5 of DCASE
 
         Args:
@@ -206,6 +208,7 @@ class Task5Model(nn.Module):
                     f'Invalid model_arch={model_arch} paramater. Must be one of {model_archs}')
             self.model_arch = model_arch
             
+        self.use_cbam = use_cbam
 
         if self.model_arch == 'mobilenetv2':
             self.bw2col = nn.Sequential(
@@ -214,6 +217,9 @@ class Task5Model(nn.Module):
                 # nn.Conv2d(1, 10, (64, 2), padding=0), nn.ReLU(), # (128, 656) -> (64, 656) 
                 nn.Conv2d(10, 3, 1, padding=0), nn.ReLU())
             self.mv2 = torchvision.models.mobilenet_v2(pretrained=True)
+
+            if self.use_cbam:
+                self.cbam = CBAMBlock(channel=1280, reduction=cbam_reduction_factor, kernel_size=cbam_kernel_size)
 
             self.final = nn.Sequential(
                 nn.Linear(1280, 512), nn.ReLU(), nn.BatchNorm1d(512),
@@ -224,11 +230,17 @@ class Task5Model(nn.Module):
                 raise Exception(
                     f"Model checkpoint path '{pann_encoder_ckpt_path}' does not exist/not found.")
             self.pann_encoder_ckpt_path = pann_encoder_ckpt_path
+
             self.AveragePool = nn.AvgPool2d((1, 2), (1, 2))
+
             self.encoder = Cnn10()
             if self.pann_encoder_ckpt_path!='':
                 self.encoder.load_state_dict(torch.load(self.pann_encoder_ckpt_path)['model'], strict = False)
                 print(f'loaded pann_cnn10 pretrained encoder state from {self.pann_encoder_ckpt_path}')
+
+            if self.use_cbam:
+                self.cbam = CBAMBlock(channel=512, reduction=cbam_reduction_factor, kernel_size=cbam_kernel_size)
+            
             self.final = nn.Sequential(
                 nn.Linear(512, 256), nn.ReLU(), nn.BatchNorm1d(256),
                 nn.Linear(256, num_classes))
@@ -247,6 +259,8 @@ class Task5Model(nn.Module):
             x = self.encoder(x)
         # x-> (batch_size, 1280/512, H, W)
         # x = x.max(dim=-1)[0].max(dim=-1)[0] # change it to mean
+        if self.use_cbam:
+            x = self.cbam(x)
         x = torch.mean(x, dim=(-1, -2))
         x = self.final(x)# -> (batch_size, num_classes)
         return x
