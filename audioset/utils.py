@@ -290,7 +290,7 @@ class Task5Model(nn.Module):
 
             if self.use_cbam:
                 self.cbam = CBAMBlock(
-                    channel=512, reduction=cbam_reduction_factor, kernel_size=cbam_kernel_size)
+                    channel=2048, reduction=cbam_reduction_factor, kernel_size=cbam_kernel_size)
 
             self.final = nn.Sequential(
                 nn.Linear(2048, 512), nn.ReLU(), nn.BatchNorm1d(512),
