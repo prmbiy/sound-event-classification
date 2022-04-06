@@ -206,7 +206,7 @@ if __name__ == "__main__":
     parser.add_argument('-rt', '--resume_training',
                         type=str, default=resume_training)
     parser.add_argument('-bs', '--balanced_sampler', type=bool, default=False)
-    parser.add_argument('-cbam', '--use_cbam', type=bool, default=use_cbam)
+    parser.add_argument('-cbam', '--use_cbam', action='store_true')
     parser.add_argument('-ga', '--grad_acc_steps',
                         type=int, default=grad_acc_steps)
     args = parser.parse_args()

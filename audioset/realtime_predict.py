@@ -247,7 +247,7 @@ if __name__ == "__main__":
 
     parser.add_argument('-p', '--permutation', type=int,
                         nargs='+', default=permutation)
-    parser.add_argument('-cbam', '--use_cbam', type=bool, default=use_cbam)
+    parser.add_argument('-cbam', '--use_cbam', action='store_true')
 
     args = parser.parse_args()
 
