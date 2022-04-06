@@ -43,8 +43,9 @@ Other than the three arguments above, the `train.py` file for Audioset takes in 
 Different flags you can use with `python train.py` are:
 - `-w`, `--workspace`: To provide the path of the active workspace.
 - `-f`, `--feature_type`: Default = `logmelspec`. To provide which model feature to use for training.
-- `-ma`, `--model_arch`: Which model architecture to use when training. Default = `mobilenetv2`. Options: `[mobilenetv2, pann_cnn10]`
-- `-cp`, `--pann_encoder_ckpt_path`: Path of the pretrained model weights for PANN architecture. Only required when `model_arch=pann_cnn10`
+- `-ma`, `--model_arch`: Which model architecture to use when training. Default = `mobilenetv2`. Options: `[mobilenetv2, pann_cnn10, pann_cnn14]`
+- `-cp10`, `--pann_cnn10_encoder_ckpt_path`: Path of the pretrained model weights for PANN architecture. Only required when `model_arch=pann_cnn10`
+- `-cp14`, `--pann_cnn14_encoder_ckpt_path`: Path of the pretrained model weights for PANN architecture. Only required when `model_arch=pann_cnn14`
 - `-n`, `--num_frames`:Number of frames in generated logmelspecs.
 - `-p`, `--permutation`: Specifies the data splits used for training and validation. Default `p = 0 1 2 3 4`
 - `-s`, `--seed`: Int seed value to set for torch and numpy. Helpful in replicating results.

@@ -55,7 +55,11 @@ cbam_channels = 512
 cbam_reduction_factor = 16
 cbam_kernel_size = 7
 
+# MEDIAN FILTERING
+use_median_filter = False
+
 # paperspace
-pann_encoder_ckpt_path = '/notebooks/sound-event-classification/audioset/model/Cnn10_mAP=0.380.pth'
+pann_cnn10_encoder_ckpt_path = '/notebooks/sound-event-classification/audioset/model/Cnn10_mAP=0.380.pth'
+pann_cnn14_encoder_ckpt_path = '/notebooks/sound-event-classification/audioset/model/Cnn14_mAP=0.431.pth'
 model_arch = 'mobilenetv2'
 resume_training = 'yes'

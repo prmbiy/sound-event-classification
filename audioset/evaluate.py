@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader
 from sklearn.metrics import classification_report, f1_score, accuracy_score
 import argparse
 from utils import AudioDataset, Task5Model, configureTorchDevice, getSampleRateString
-from config import target_names, feature_type, num_frames, permutation, batch_size, num_workers, num_classes, sample_rate, workspace
+from config import target_names, feature_type, num_frames, permutation, batch_size, num_workers, num_classes, sample_rate, workspace, use_cbam
 
 __author__ = "Andrew Koh Jin Jie, Anushka Jain and Soham Tiwari"
 __credits__ = ["Prof Chng Eng Siong", "Yan Zhen", "Tanmay Khandelwal"]
@@ -23,7 +23,7 @@ for i, target in enumerate(target_names):
     class_mapping[target] = i
 
 
-def run(workspace, feature_type, num_frames, perm, model_arch):
+def run(workspace, feature_type, num_frames, perm, model_arch, use_cbam):
 
     folds = []
     for i in range(5):
@@ -49,8 +49,8 @@ def run(workspace, feature_type, num_frames, perm, model_arch):
     # Instantiate the model
     model = Task5Model(num_classes, model_arch).to(device)
     print(f'Using {model_arch} model.')
-    model.load_state_dict(torch.load('{}/model/{}/model_{}_{}_{}'.format(workspace, getSampleRateString(sample_rate),
-                          feature_type, str(perm[0])+str(perm[1])+str(perm[2]), model_arch))['model_state_dict'])
+    model.load_state_dict(torch.load('{}/model/{}/model_{}_{}_{}_use_cbam_{}'.format(workspace, getSampleRateString(sample_rate),
+                          feature_type, str(perm[0])+str(perm[1])+str(perm[2]), model_arch, use_cbam))['model_state_dict'])
 
     y_pred = []
     for sample in test_loader:
@@ -101,7 +101,8 @@ if __name__ == "__main__":
     parser.add_argument('-f', '--feature_type', type=str, default=feature_type)
     parser.add_argument('-n', '--num_frames', type=int, default=num_frames)
     parser.add_argument('-ma', '--model_arch', type=str, default='mobilenetv2')
+    parser.add_argument('-cbam', '--use_cbam', type=bool, default=use_cbam)
     parser.add_argument('-p', '--permutation', type=int,
                         nargs='+', default=permutation)
     args = parser.parse_args()
-    run(args.workspace, args.feature_type, args.num_frames, args.permutation, args.model_arch)
+    run(args.workspace, args.feature_type, args.num_frames, args.permutation, args.model_arch, args.use_cbam)

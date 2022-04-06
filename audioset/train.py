@@ -18,7 +18,7 @@ import argparse
 from utils import AudioDataset, Task5Model, configureTorchDevice, getSampleRateString, BalancedBatchSampler
 from augmentation.SpecTransforms import TimeMask, FrequencyMask, RandomCycle
 from torchsummary import summary
-from config import feature_type, num_frames, seed, permutation, batch_size, num_workers, num_classes, learning_rate, amsgrad, patience, verbose, epochs, workspace, sample_rate, early_stopping, grad_acc_steps, model_arch, pann_encoder_ckpt_path, resume_training, n_mels
+from config import feature_type, num_frames, seed, permutation, batch_size, num_workers, num_classes, learning_rate, amsgrad, patience, verbose, epochs, workspace, sample_rate, early_stopping, grad_acc_steps, model_arch, pann_cnn10_encoder_ckpt_path, pann_cnn14_encoder_ckpt_path, resume_training, n_mels, use_cbam
 
 
 __author__ = "Andrew, Yan Zhen, Anushka and Soham"
@@ -39,7 +39,11 @@ def run(args):
     resume_training = args.resume_training
     grad_acc_steps = args.grad_acc_steps
     model_arch = args.model_arch
-    pann_encoder_ckpt_path = args.pann_encoder_ckpt_path
+    use_cbam = args.use_cbam
+    if model_arch == 'pann_cnn10':
+        pann_cnn10_encoder_ckpt_path = args.pann_cnn10_encoder_ckpt_path
+    elif model_arch == 'pann_cnn14':
+        pann_cnn14_encoder_ckpt_path = args.pann_cnn14_encoder_ckpt_path
     balanced_sampler = args.balanced_sampler
 
     starting_epoch = 0
@@ -93,15 +97,19 @@ def run(args):
     # Define the device to be used
     device = configureTorchDevice()
     # Instantiate the model
-    model = Task5Model(num_classes, model_arch,
-                       pann_encoder_ckpt_path).to(device)
+    if model_arch == 'mobilenetv2':
+        model = Task5Model(num_classes, model_arch, use_cbam=use_cbam).to(device)
+    elif model_arch == 'pann_cnn10':
+        model = Task5Model(num_classes, model_arch, pann_cnn10_encoder_ckpt_path=pann_cnn10_encoder_ckpt_path, use_cbam=use_cbam).to(device)
+    elif model_arch == 'pann_cnn14':
+        model = Task5Model(num_classes, model_arch, pann_cnn14_encoder_ckpt_path=pann_cnn14_encoder_ckpt_path, use_cbam=use_cbam).to(device)
     print(f'Using {model_arch} model.')
     summary(model, (1, n_mels, num_frames))
     folderpath = '{}/model/{}'.format(workspace,
                                       getSampleRateString(sample_rate))
     os.makedirs(folderpath, exist_ok=True)
-    model_path = '{}/model_{}_{}_{}'.format(folderpath,
-                                            feature_type, str(perm[0])+str(perm[1])+str(perm[2]), model_arch)
+    model_path = '{}/model_{}_{}_{}_use_cbam_{}'.format(folderpath,
+                                            feature_type, str(perm[0])+str(perm[1])+str(perm[2]), model_arch, use_cbam)
 
     # Define optimizer, scheduler and loss criteria
     optimizer = optim.Adam(
@@ -186,8 +194,10 @@ if __name__ == "__main__":
     parser.add_argument('-w', '--workspace', type=str, default=workspace)
     parser.add_argument('-f', '--feature_type', type=str, default=feature_type)
     parser.add_argument('-ma', '--model_arch', type=str, default=model_arch)
-    parser.add_argument('-cp', '--pann_encoder_ckpt_path',
-                        type=str, default=pann_encoder_ckpt_path)
+    parser.add_argument('-cp10', '--pann_cnn10_encoder_ckpt_path',
+                        type=str, default=pann_cnn10_encoder_ckpt_path)
+    parser.add_argument('-cp14', '--pann_cnn14_encoder_ckpt_path',
+                        type=str, default=pann_cnn14_encoder_ckpt_path)
     parser.add_argument('-n', '--num_frames', type=int, default=num_frames)
     parser.add_argument('-p', '--permutation', type=int,
                         nargs='+', default=permutation)
@@ -195,6 +205,7 @@ if __name__ == "__main__":
     parser.add_argument('-rt', '--resume_training',
                         type=str, default=resume_training)
     parser.add_argument('-bs', '--balanced_sampler', type=bool, default=False)
+    parser.add_argument('-cbam', '--use_cbam', type=bool, default=use_cbam)
     parser.add_argument('-ga', '--grad_acc_steps',
                         type=int, default=grad_acc_steps)
     args = parser.parse_args()

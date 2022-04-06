@@ -8,7 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from utils import Task5Model, configureTorchDevice, getSampleRateString
 from augmentation.SpecTransforms import ResizeSpectrogram
-from config import target_names, sample_rate, num_frames, gpu, threshold, num_classes, channels, n_fft, hop_length, n_mels, fmin, fmax, audio_segment_length, length_full_recording, resize, feature_type, permutation, voting, normalised_weights
+from config import target_names, sample_rate, num_frames, gpu, threshold, num_classes, channels, n_fft, hop_length, n_mels, fmin, fmax, audio_segment_length, length_full_recording, resize, feature_type, permutation, voting, normalised_weights, model_arch, use_cbam
 
 __author__ = "Andrew Koh Jin Jie, Anushka Jain and Soham Tiwari"
 __credits__ = ["Prof Chng Eng Siong", "Yan Zhen", "Tanmay Khandelwal"]
@@ -30,6 +30,7 @@ def record(args):
     mode = args.mode
     perm = args.permutation
     voting = args.voting
+    use_cbam = args.use_cbam
 
     resizeSpec = ResizeSpectrogram(frames=num_frames)
     channel_means = np.load('./data/statistics/{}/channel_means_{}_{}.npy'.format(getSampleRateString(
@@ -44,7 +45,7 @@ def record(args):
 
     model = Task5Model(num_classes).to(device)
     model.load_state_dict(torch.load(
-        './model/{}k/model_{}_{}'.format(sample_rate/1000, feature_type, str(perm[0])+str(perm[1])+str(perm[2])), map_location=device))
+        './model/{}k/model_{}_{}_{}_use_cbam_{}'.format(sample_rate/1000, feature_type, str(perm[0])+str(perm[1])+str(perm[2]), model_arch, use_cbam), map_location=device)['model_state_dict'])
     model = model.eval()
 
     length_full_recording = args.length_full_recording
@@ -246,6 +247,7 @@ if __name__ == "__main__":
 
     parser.add_argument('-p', '--permutation', type=int,
                         nargs='+', default=permutation)
+    parser.add_argument('-cbam', '--use_cbam', type=bool, default=use_cbam)
 
     args = parser.parse_args()
 

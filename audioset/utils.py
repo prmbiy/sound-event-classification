@@ -1,7 +1,8 @@
 from typing import Iterator
 from matplotlib.style import use
 import pandas as pd
-from config import feature_type, permutation, sample_rate, num_frames, use_cbam, cbam_kernel_size, cbam_reduction_factor
+import scipy
+from config import feature_type, permutation, sample_rate, num_frames, use_cbam, cbam_kernel_size, cbam_reduction_factor, use_median_filter
 import numpy as np
 import torch
 import torch.nn as nn
@@ -11,18 +12,19 @@ import torchvision
 from augmentation.SpecTransforms import ResizeSpectrogram
 from augmentation.RandomErasing import RandomErasing
 from attention.CBAM import CBAMBlock
-from pann_encoder import Cnn10
+from pann_encoder import Cnn10, Cnn14
 import os
 
 __author__ = "Andrew Koh Jin Jie, Yan Zhen"
-__credits__ = ["Prof Chng Eng Siong", "Yan Zhen", "Tanmay Khandelwal", "Anushka Jain"]
+__credits__ = ["Prof Chng Eng Siong", "Yan Zhen",
+               "Tanmay Khandelwal", "Anushka Jain"]
 __license__ = "GPL"
 __version__ = "0.0.0"
 __maintainer__ = "Soham Tiwari"
 __email__ = "soham.tiwari800@gmail.com"
 __status__ = "Development"
 
-model_archs = ['mobilenetv2', 'pann_cnn10']
+model_archs = ['mobilenetv2', 'pann_cnn10', 'pann_cnn14']
 class_mapping = {}
 class_mapping['breaking'] = 0
 class_mapping['chatter'] = 1
@@ -185,15 +187,34 @@ class BalancedBatchSampler(torch.utils.data.sampler.Sampler):
         return self.balanced_max*len(self.keys)
 
 
+def apply_median(self, predictions):
+    """To apply standard median filtering.
+
+    Args:
+        predictions (torch.Tensor): Predictions
+
+    Returns:
+        torch.Tensor: Predictons smoothed using median filter
+    """
+    device = predictions.device
+    predictions = predictions.cpu().detach().numpy()
+    for batch in range(predictions.shape[0]):
+        predictions[batch, ...] = scipy.ndimage.filters.median_filter(
+            predictions[batch, ...])
+
+    return torch.from_numpy(predictions).float().to(device)
+
+
 class Task5Model(nn.Module):
 
-    def __init__(self, num_classes, model_arch: str = model_archs[0], pann_encoder_ckpt_path: str = '', use_cbam: bool = use_cbam):
+    def __init__(self, num_classes, model_arch: str = model_archs[0], pann_cnn10_encoder_ckpt_path: str = '', pann_cnn14_encoder_ckpt_path: str = '', use_cbam: bool = use_cbam, use_median_filter: bool = use_median_filter):
         """Initialising model for Task 5 of DCASE
 
         Args:
             num_classes (int): Number of classes_
-            model_arch (str, optional): Model architecture to be used. One of ['mobilenetv2', 'pann_cnn10']. Defaults to model_archs[0].
-            pann_encoder_ckpt_path (str, optional): File path for downloaded pretrained model checkpoint. Defaults to None.
+            model_arch (str, optional): Model architecture to be used. One of ['mobilenetv2', 'pann_cnn10', 'pann_cnn14']. Defaults to model_archs[0].
+            pann_cnn10_encoder_ckpt_path (str, optional): File path for downloaded pretrained model checkpoint. Defaults to None.
+            pann_cnn14_encoder_ckpt_path (str, optional): File path for downloaded pretrained model checkpoint. Defaults to None.
 
         Raises:
             Exception: Invalid model_arch paramater passed.
@@ -207,62 +228,93 @@ class Task5Model(nn.Module):
                 raise Exception(
                     f'Invalid model_arch={model_arch} paramater. Must be one of {model_archs}')
             self.model_arch = model_arch
-            
+
         self.use_cbam = use_cbam
+
+        self.use_median_filter = use_median_filter
 
         if self.model_arch == 'mobilenetv2':
             self.bw2col = nn.Sequential(
                 nn.BatchNorm2d(1),
-                nn.Conv2d(1, 10, 1, padding=0), nn.ReLU(), # (128, 656) -> (64, 656) 
-                # nn.Conv2d(1, 10, (64, 2), padding=0), nn.ReLU(), # (128, 656) -> (64, 656) 
+                # (128, 656) -> (64, 656)
+                nn.Conv2d(1, 10, 1, padding=0), nn.ReLU(),
+                # nn.Conv2d(1, 10, (64, 2), padding=0), nn.ReLU(), # (128, 656) -> (64, 656)
                 nn.Conv2d(10, 3, 1, padding=0), nn.ReLU())
             self.mv2 = torchvision.models.mobilenet_v2(pretrained=True)
 
             if self.use_cbam:
-                self.cbam = CBAMBlock(channel=1280, reduction=cbam_reduction_factor, kernel_size=cbam_kernel_size)
+                self.cbam = CBAMBlock(
+                    channel=1280, reduction=cbam_reduction_factor, kernel_size=cbam_kernel_size)
 
             self.final = nn.Sequential(
                 nn.Linear(1280, 512), nn.ReLU(), nn.BatchNorm1d(512),
                 nn.Linear(512, num_classes))
 
         elif self.model_arch == 'pann_cnn10':
-            if len(pann_encoder_ckpt_path) > 0 and os.path.exists(pann_encoder_ckpt_path) == False:
+            if len(pann_cnn10_encoder_ckpt_path) > 0 and os.path.exists(pann_cnn10_encoder_ckpt_path) == False:
                 raise Exception(
-                    f"Model checkpoint path '{pann_encoder_ckpt_path}' does not exist/not found.")
-            self.pann_encoder_ckpt_path = pann_encoder_ckpt_path
+                    f"Model checkpoint path '{pann_cnn10_encoder_ckpt_path}' does not exist/not found.")
+            self.pann_cnn10_encoder_ckpt_path = pann_cnn10_encoder_ckpt_path
 
             self.AveragePool = nn.AvgPool2d((1, 2), (1, 2))
 
             self.encoder = Cnn10()
-            if self.pann_encoder_ckpt_path!='':
-                self.encoder.load_state_dict(torch.load(self.pann_encoder_ckpt_path)['model'], strict = False)
-                print(f'loaded pann_cnn10 pretrained encoder state from {self.pann_encoder_ckpt_path}')
+            if self.pann_cnn10_encoder_ckpt_path != '':
+                self.encoder.load_state_dict(torch.load(
+                    self.pann_cnn10_encoder_ckpt_path)['model'], strict=False)
+                print(
+                    f'loaded pann_cnn14 pretrained encoder state from {self.pann_cnn10_encoder_ckpt_path}')
 
             if self.use_cbam:
-                self.cbam = CBAMBlock(channel=512, reduction=cbam_reduction_factor, kernel_size=cbam_kernel_size)
-            
+                self.cbam = CBAMBlock(
+                    channel=512, reduction=cbam_reduction_factor, kernel_size=cbam_kernel_size)
+
             self.final = nn.Sequential(
+                nn.Linear(512, 256), nn.ReLU(), nn.BatchNorm1d(256),
+                nn.Linear(256, num_classes))
+
+        elif self.model_arch == 'pann_cnn14':
+            if len(pann_cnn14_encoder_ckpt_path) > 0 and os.path.exists(pann_cnn14_encoder_ckpt_path) == False:
+                raise Exception(
+                    f"Model checkpoint path '{pann_cnn14_encoder_ckpt_path}' does not exist/not found.")
+            self.pann_cnn14_encoder_ckpt_path = pann_cnn14_encoder_ckpt_path
+
+            self.AveragePool = nn.AvgPool2d((1, 2), (1, 2))
+
+            self.encoder = Cnn14()
+            if self.pann_cnn14_encoder_ckpt_path != '':
+                self.encoder.load_state_dict(torch.load(
+                    self.pann_cnn14_encoder_ckpt_path)['model'], strict=False)
+                print(
+                    f'loaded pann_cnn10 pretrained encoder state from {self.pann_cnn14_encoder_ckpt_path}')
+
+            if self.use_cbam:
+                self.cbam = CBAMBlock(
+                    channel=512, reduction=cbam_reduction_factor, kernel_size=cbam_kernel_size)
+
+            self.final = nn.Sequential(
+                nn.Linear(2048, 512), nn.ReLU(), nn.BatchNorm1d(512),
                 nn.Linear(512, 256), nn.ReLU(), nn.BatchNorm1d(256),
                 nn.Linear(256, num_classes))
 
     def forward(self, x):
         if self.model_arch == 'mobilenetv2':
-            x = self.bw2col(x) # -> (batch_size, 3, n_mels, num_frames)
+            x = self.bw2col(x)  # -> (batch_size, 3, n_mels, num_frames)
             x = self.mv2.features(x)
-           
-        elif self.model_arch == 'pann_cnn10':
-            x = x # -> (batch_size, 1, n_mels, num_frames)
-            x = x.permute(0, 1, 3, 2) # -> (batch_size, 1, num_frames, n_mels)
-            x = self.AveragePool(x) # -> (batch_size, 1, num_frames, n_mels/2) 
+
+        elif self.model_arch == 'pann_cnn10' or self.model_arch == 'pann_cnn14':
+            x = x  # -> (batch_size, 1, n_mels, num_frames)
+            x = x.permute(0, 1, 3, 2)  # -> (batch_size, 1, num_frames, n_mels)
+            x = self.AveragePool(x)  # -> (batch_size, 1, num_frames, n_mels/2)
             # try to use a linear layer here.
-            x = torch.squeeze(x, 1) # -> (batch_size, num_frames, 64)
+            x = torch.squeeze(x, 1)  # -> (batch_size, num_frames, 64)
             x = self.encoder(x)
         # x-> (batch_size, 1280/512, H, W)
         # x = x.max(dim=-1)[0].max(dim=-1)[0] # change it to mean
         if self.use_cbam:
             x = self.cbam(x)
         x = torch.mean(x, dim=(-1, -2))
-        x = self.final(x)# -> (batch_size, num_classes)
+        x = self.final(x)  # -> (batch_size, num_classes)
         return x
 
 
