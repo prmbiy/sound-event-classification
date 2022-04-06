@@ -40,6 +40,7 @@ def run(args):
     grad_acc_steps = args.grad_acc_steps
     model_arch = args.model_arch
     use_cbam = args.use_cbam
+    print(f'Using cbam: {use_cbam}')
     if model_arch == 'pann_cnn10':
         pann_cnn10_encoder_ckpt_path = args.pann_cnn10_encoder_ckpt_path
     elif model_arch == 'pann_cnn14':
