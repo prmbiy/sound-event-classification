@@ -47,7 +47,7 @@ def run(workspace, feature_type, num_frames, perm, model_arch, use_cbam):
     device = configureTorchDevice()
 
     # Instantiate the model
-    model = Task5Model(num_classes, model_arch).to(device)
+    model = Task5Model(num_classes, model_arch, use_cbam=use_cbam).to(device)
     print(f'Using {model_arch} model.')
     model.load_state_dict(torch.load('{}/model/{}/model_{}_{}_{}_use_cbam_{}'.format(workspace, getSampleRateString(sample_rate),
                           feature_type, str(perm[0])+str(perm[1])+str(perm[2]), model_arch, use_cbam))['model_state_dict'])
