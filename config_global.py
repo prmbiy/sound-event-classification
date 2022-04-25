@@ -3,10 +3,10 @@ from random import sample
 
 
 sample_rate = 16000
-n_fft=(2560*44100)//sample_rate
-hop_length=(694*44100)//sample_rate
+n_fft=(2560*sample_rate)//44100
+hop_length=(694*sample_rate)//44100
 n_mels = 128
 fmin = 20
 remove_codec_from_filename = True
-fmax = sample_rate/2
+fmax = 22050
 num_cores = -1 # -1 implies take all available cores.
