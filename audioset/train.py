@@ -19,7 +19,7 @@ from utils import AudioDataset, Task5Model, configureTorchDevice, getSampleRateS
 from augmentation.SpecTransforms import TimeMask, FrequencyMask, RandomCycle
 from torchsummary import summary
 from config import feature_type, num_frames, seed, permutation, batch_size, num_workers, num_classes, learning_rate, amsgrad, patience, verbose, epochs, workspace, sample_rate, early_stopping, grad_acc_steps, model_arch, pann_cnn10_encoder_ckpt_path, pann_cnn14_encoder_ckpt_path, resume_training, n_mels, use_cbam
-
+import wandb
 
 __author__ = "Andrew, Yan Zhen, Anushka and Soham"
 __credits__ = ["Prof Chng Eng Siong", "Yan Zhen", "Tanmay Khandelwal"]
@@ -30,7 +30,8 @@ __email__ = "soham.tiwari800@gmail.com"
 __status__ = "Development"
 
 def run(args):
-
+    wandb.init(project="st-project-sec", entity="sohamtiwari3120")
+    wandb.config.update(args)
     workspace = args.workspace
     feature_type = args.feature_type
     num_frames = args.num_frames
@@ -106,6 +107,7 @@ def run(args):
         model = Task5Model(num_classes, model_arch, pann_cnn14_encoder_ckpt_path=pann_cnn14_encoder_ckpt_path, use_cbam=use_cbam).to(device)
     print(f'Using {model_arch} model.')
     summary(model, (1, n_mels, num_frames))
+    wandb.watch(model, log_freq=100)
     folderpath = '{}/model/{}'.format(workspace,
                                       getSampleRateString(sample_rate))
     os.makedirs(folderpath, exist_ok=True)
@@ -153,7 +155,7 @@ def run(args):
                     optimizer.step()
                     optimizer.zero_grad()
                 this_epoch_train_loss += loss.detach().cpu().numpy()
-
+        
         this_epoch_valid_loss = 0
         for sample in tqdm(val_loader):
             inputs = sample['data'].to(device)
@@ -166,6 +168,12 @@ def run(args):
 
         this_epoch_train_loss /= len(train_df)
         this_epoch_valid_loss /= len(valid_df)
+        wandb.log({"train":{
+            "loss": this_epoch_train_loss
+        }})
+        wandb.log({"validation":{
+            "loss": this_epoch_valid_loss
+        }})
         print(
             f"train_loss = {this_epoch_train_loss}, val_loss={this_epoch_valid_loss}")
         train_loss_hist.append(this_epoch_train_loss)
