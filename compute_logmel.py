@@ -7,6 +7,7 @@ from tqdm import tqdm
 import argparse
 from loguru import logger
 from config_global import n_fft, hop_length, n_mels, fmin, fmax, sample_rate, num_cores, remove_codec_from_filename
+import warnings
 
 
 @logger.catch
@@ -32,14 +33,16 @@ def compute_melspec(filename, outdir, audio_segment_length):
         wav = librosa.load(filename, sr=sample_rate)[0]
         if(audio_segment_length != -1 and audio_segment_length != 0):
             wav = wav[:sample_rate*audio_segment_length]
-        melspec = librosa.feature.melspectrogram(
-            wav,
-            sr=sample_rate,
-            n_fft=n_fft,
-            hop_length=hop_length,
-            n_mels=n_mels,
-            fmin=fmin,
-            fmax=fmax)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            melspec = librosa.feature.melspectrogram(
+                wav,
+                sr=sample_rate,
+                n_fft=n_fft,
+                hop_length=hop_length,
+                n_mels=n_mels,
+                fmin=fmin,
+                fmax=fmax)
         logmel = librosa.core.power_to_db(melspec)
 
         np.save(outdir + remove_codec_substr(filename,

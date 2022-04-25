@@ -24,13 +24,17 @@ length_full_recording = 10
 audio_segment_length = 3
 seed = 42
 
+#                           441,000        160,000
+# nfft/window_len           2560        7056
+# hop_len                   694         1912
+# num_frames                656         84
 sample_rate = 16000
 threshold = 0.9
 n_fft = (2560*44100)//sample_rate
 hop_length = (694*44100)//sample_rate
 n_mels = 128
 fmin = 20
-fmax = sample_rate/2
+fmax = 22050
 # num_frames = 200
 num_frames = int(np.ceil(sample_rate*length_full_recording/hop_length))
 

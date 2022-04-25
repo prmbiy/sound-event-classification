@@ -236,7 +236,8 @@ class Task5Model(nn.Module):
         if self.model_arch == 'mobilenetv2':
             self.bw2col = nn.Sequential(
                 nn.BatchNorm2d(1),
-                # (128, 656) -> (64, 656)
+                # 44.1k (128, 656)
+                # 16.0k (128, 656)
                 nn.Conv2d(1, 3, 1, padding=0), nn.GELU(),
                 nn.Conv2d(3, 10, 1, padding=0), nn.GELU(),
                 nn.Conv2d(10, 20, 1, padding=0), nn.GELU(),
