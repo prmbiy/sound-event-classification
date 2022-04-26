@@ -36,8 +36,7 @@ n_mels = 128
 fmin = 20
 fmax = 22050
 # num_frames = 200
-# num_frames = int(np.ceil(sample_rate*length_full_recording/hop_length))
-num_frames = 636
+num_frames = int(np.ceil(sample_rate*length_full_recording/hop_length))
 
 permutation = [0, 1, 2, 3, 4]
 workspace = '/notebooks/sound-event-classification/audioset'
