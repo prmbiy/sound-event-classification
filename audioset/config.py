@@ -44,8 +44,8 @@ target_names = ['breaking', 'chatter', 'crying_sobbing', 'emergency_vehicle',
                 'explosion', 'gunshot_gunfire', 'motor_vehicle_road', 'screaming', 'siren', 'others']
 num_classes = len(target_names)
 # for balancedbatchsampler, for every batch to have equal number of samples, the size of each batch should be a multiple of the num of classes
-batch_size = num_classes * 1
-grad_acc_steps = 2
+batch_size = 32
+grad_acc_steps = 1
 
 # voting = 'simple_average'
 voting = 'weighted_average'
