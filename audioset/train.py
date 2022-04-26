@@ -127,7 +127,7 @@ def run(args):
     lowest_val_loss = np.inf
     epochs_without_new_lowest = 0
 
-    if resume_training == 'yes' and os.path.exists(model_path):
+    if resume_training and os.path.exists(model_path):
         print(f'resume_training = {resume_training} using path {model_path}')
         checkpoint = torch.load(model_path)
         model.load_state_dict(checkpoint['model_state_dict'])
@@ -213,8 +213,7 @@ if __name__ == "__main__":
     parser.add_argument('-p', '--permutation', type=int,
                         nargs='+', default=permutation)
     parser.add_argument('-s', '--seed', type=int, default=seed)
-    parser.add_argument('-rt', '--resume_training',
-                        type=str, default=resume_training)
+    parser.add_argument('-rt', '--resume_training', action='store_true')
     parser.add_argument('-bs', '--balanced_sampler', type=bool, default=False)
     parser.add_argument('-cbam', '--use_cbam', action='store_true')
     parser.add_argument('-ga', '--grad_acc_steps',
