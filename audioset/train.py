@@ -201,7 +201,7 @@ def run(args):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Feature type')
-    parser.add_argument('-en', '--expt_name', type=str, default=workspace)
+    parser.add_argument('-en', '--expt_name', type=str, required=True)
     parser.add_argument('-w', '--workspace', type=str, default=workspace)
     parser.add_argument('-f', '--feature_type', type=str, default=feature_type)
     parser.add_argument('-ma', '--model_arch', type=str, default=model_arch)
