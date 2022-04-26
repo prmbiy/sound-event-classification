@@ -32,6 +32,7 @@ __status__ = "Development"
 def run(args):
     wandb.init(project="st-project-sec", entity="sohamtiwari3120")
     wandb.config.update(args)
+    expt_name = args.expt_name
     workspace = args.workspace
     feature_type = args.feature_type
     num_frames = args.num_frames
@@ -108,7 +109,7 @@ def run(args):
     print(f'Using {model_arch} model.')
     summary(model, (1, n_mels, num_frames))
     wandb.watch(model, log_freq=100)
-    folderpath = '{}/model/{}'.format(workspace,
+    folderpath = '{}/model/{}/{}'.format(workspace, expt_name,
                                       getSampleRateString(sample_rate))
     os.makedirs(folderpath, exist_ok=True)
     model_path = '{}/model_{}_{}_{}_use_cbam_{}'.format(folderpath,
@@ -126,8 +127,8 @@ def run(args):
     lowest_val_loss = np.inf
     epochs_without_new_lowest = 0
 
-    print(f'resume_training = {resume_training}')
     if resume_training == 'yes' and os.path.exists(model_path):
+        print(f'resume_training = {resume_training} using path {model_path}')
         checkpoint = torch.load(model_path)
         model.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
@@ -200,6 +201,7 @@ def run(args):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Feature type')
+    parser.add_argument('-en', '--expt_name', type=str, default=workspace)
     parser.add_argument('-w', '--workspace', type=str, default=workspace)
     parser.add_argument('-f', '--feature_type', type=str, default=feature_type)
     parser.add_argument('-ma', '--model_arch', type=str, default=model_arch)
