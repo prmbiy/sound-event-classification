@@ -48,9 +48,10 @@ def run(workspace, feature_type, num_frames, perm, model_arch, use_cbam, expt_na
 
     # Instantiate the model
     model = Task5Model(num_classes, model_arch, use_cbam=use_cbam).to(device)
-    print(f'Using {model_arch} model.')
-    model.load_state_dict(torch.load('{}/model/{}/{}/model_{}_{}_{}_use_cbam_{}'.format(workspace, expt_name, getSampleRateString(sample_rate),
-                          feature_type, str(perm[0])+str(perm[1])+str(perm[2]), model_arch, use_cbam))['model_state_dict'])
+    model_path = '{}/model/{}/{}/model_{}_{}_{}_use_cbam_{}'.format(workspace, expt_name, getSampleRateString(
+        sample_rate), feature_type, str(perm[0])+str(perm[1])+str(perm[2]), model_arch, use_cbam)
+    model.load_state_dict(torch.load(model_path)['model_state_dict'])
+    print(f'Using {model_arch} model from {model_path}.')
 
     y_pred = []
     for sample in test_loader:
@@ -85,11 +86,14 @@ def run(workspace, feature_type, num_frames, perm, model_arch, use_cbam, expt_na
             y_true_new.append(yt)
             y_pred_new.append(yp)
 
-    print(len(y_true), len(y_true_new), np.unique(y_true_new, return_counts=True))
+    print(len(y_true), len(y_true_new), np.unique(
+        y_true_new, return_counts=True))
     print(f'Excluding other class:')
     print(classification_report(y_true_new, y_pred_new, digits=4))
-    print(f"Micro F1 Score: {f1_score(y_true_new, y_pred_new, average='micro')}")
-    print(f"Macro F1 Score: {f1_score(y_true_new, y_pred_new, average='macro')}")
+    print(
+        f"Micro F1 Score: {f1_score(y_true_new, y_pred_new, average='micro')}")
+    print(
+        f"Macro F1 Score: {f1_score(y_true_new, y_pred_new, average='macro')}")
     print(f'Accuracy Score: {accuracy_score(y_true_new, y_pred_new)}')
     print(y_true_new[:5], y_pred_new[:5])
 
@@ -106,4 +110,5 @@ if __name__ == "__main__":
     parser.add_argument('-p', '--permutation', type=int,
                         nargs='+', default=permutation)
     args = parser.parse_args()
-    run(args.workspace, args.feature_type, args.num_frames, args.permutation, args.model_arch, args.use_cbam, args.expt_name)
+    run(args.workspace, args.feature_type, args.num_frames,
+        args.permutation, args.model_arch, args.use_cbam, args.expt_name)
