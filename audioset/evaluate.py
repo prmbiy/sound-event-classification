@@ -23,7 +23,7 @@ for i, target in enumerate(target_names):
     class_mapping[target] = i
 
 
-def run(workspace, feature_type, num_frames, perm, model_arch, use_cbam):
+def run(workspace, feature_type, num_frames, perm, model_arch, use_cbam, expt_name):
 
     folds = []
     for i in range(5):
@@ -49,7 +49,7 @@ def run(workspace, feature_type, num_frames, perm, model_arch, use_cbam):
     # Instantiate the model
     model = Task5Model(num_classes, model_arch, use_cbam=use_cbam).to(device)
     print(f'Using {model_arch} model.')
-    model.load_state_dict(torch.load('{}/model/{}/model_{}_{}_{}_use_cbam_{}'.format(workspace, getSampleRateString(sample_rate),
+    model.load_state_dict(torch.load('{}/model/{}/{}/model_{}_{}_{}_use_cbam_{}'.format(workspace, expt_name, getSampleRateString(sample_rate),
                           feature_type, str(perm[0])+str(perm[1])+str(perm[2]), model_arch, use_cbam))['model_state_dict'])
 
     y_pred = []
@@ -97,6 +97,7 @@ def run(workspace, feature_type, num_frames, perm, model_arch, use_cbam):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Feature type')
+    parser.add_argument('-en', '--expt_name', type=str, required=True)
     parser.add_argument('-w', '--workspace', type=str, default=workspace)
     parser.add_argument('-f', '--feature_type', type=str, default=feature_type)
     parser.add_argument('-n', '--num_frames', type=int, default=num_frames)
@@ -105,4 +106,4 @@ if __name__ == "__main__":
     parser.add_argument('-p', '--permutation', type=int,
                         nargs='+', default=permutation)
     args = parser.parse_args()
-    run(args.workspace, args.feature_type, args.num_frames, args.permutation, args.model_arch, args.use_cbam)
+    run(args.workspace, args.feature_type, args.num_frames, args.permutation, args.model_arch, args.use_cbam, args.expt_name)
