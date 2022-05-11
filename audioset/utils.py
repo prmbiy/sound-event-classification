@@ -326,7 +326,7 @@ class Task5Model(nn.Module):
         # x = x.max(dim=-1)[0].max(dim=-1)[0] # change it to mean
         if self.use_cbam:
             x = self.cbam(x)
-        if x.use_pna:
+        if self.use_pna:
             x = self.pna(x)
         x = torch.mean(x, dim=(-1, -2))
         x = self.final(x)  # -> (batch_size, num_classes)
