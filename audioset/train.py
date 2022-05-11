@@ -42,7 +42,9 @@ def run(args):
     grad_acc_steps = args.grad_acc_steps
     model_arch = args.model_arch
     use_cbam = args.use_cbam
+    use_pna = args.use_pna
     print(f'Using cbam: {use_cbam}')
+    print(f'Using pna: {use_pna}')
     if model_arch == 'pann_cnn10':
         pann_cnn10_encoder_ckpt_path = args.pann_cnn10_encoder_ckpt_path
     elif model_arch == 'pann_cnn14':
@@ -103,9 +105,9 @@ def run(args):
     if model_arch == 'mobilenetv2':
         model = Task5Model(num_classes, model_arch, use_cbam=use_cbam).to(device)
     elif model_arch == 'pann_cnn10':
-        model = Task5Model(num_classes, model_arch, pann_cnn10_encoder_ckpt_path=pann_cnn10_encoder_ckpt_path, use_cbam=use_cbam).to(device)
+        model = Task5Model(num_classes, model_arch, pann_cnn10_encoder_ckpt_path=pann_cnn10_encoder_ckpt_path, use_cbam=use_cbam, use_pna = use_pna).to(device)
     elif model_arch == 'pann_cnn14':
-        model = Task5Model(num_classes, model_arch, pann_cnn14_encoder_ckpt_path=pann_cnn14_encoder_ckpt_path, use_cbam=use_cbam).to(device)
+        model = Task5Model(num_classes, model_arch, pann_cnn14_encoder_ckpt_path=pann_cnn14_encoder_ckpt_path, use_cbam=use_cbam, use_pna = use_pna).to(device)
     print(f'Using {model_arch} model.')
     summary(model, (1, n_mels, num_frames))
     wandb.watch(model, log_freq=100)
@@ -216,6 +218,7 @@ if __name__ == "__main__":
     parser.add_argument('-rt', '--resume_training', action='store_true')
     parser.add_argument('-bs', '--balanced_sampler', type=bool, default=False)
     parser.add_argument('-cbam', '--use_cbam', action='store_true')
+    parser.add_argument('-pna', '--use_pna', action='store_true')
     parser.add_argument('-ga', '--grad_acc_steps',
                         type=int, default=grad_acc_steps)
     args = parser.parse_args()

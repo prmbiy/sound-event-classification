@@ -54,10 +54,13 @@ sum_weights = sum(weights)
 normalised_weights = np.array(weights)/sum_weights
 
 # CBAM
-use_cbam = True
+use_cbam = False
 cbam_channels = 512
 cbam_reduction_factor = 16
 cbam_kernel_size = 7
+
+# PNA
+use_pna = True
 
 # MEDIAN FILTERING
 use_median_filter = False

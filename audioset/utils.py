@@ -2,7 +2,7 @@ from typing import Iterator
 from matplotlib.style import use
 import pandas as pd
 import scipy
-from config import feature_type, permutation, sample_rate, num_frames, use_cbam, cbam_kernel_size, cbam_reduction_factor, use_median_filter
+from config import feature_type, permutation, sample_rate, num_frames, use_cbam, cbam_kernel_size, cbam_reduction_factor, use_median_filter, use_pna
 import numpy as np
 import torch
 import torch.nn as nn
@@ -13,6 +13,7 @@ from augmentation.SpecTransforms import ResizeSpectrogram
 from augmentation.RandomErasing import RandomErasing
 from attention.CBAM import CBAMBlock
 from pann_encoder import Cnn10, Cnn14
+from ParNetAttention import ParNetAttention
 import os
 
 __author__ = "Andrew Koh Jin Jie, Yan Zhen"
@@ -207,7 +208,7 @@ def apply_median(self, predictions):
 
 class Task5Model(nn.Module):
 
-    def __init__(self, num_classes, model_arch: str = model_archs[0], pann_cnn10_encoder_ckpt_path: str = '', pann_cnn14_encoder_ckpt_path: str = '', use_cbam: bool = use_cbam, use_median_filter: bool = use_median_filter):
+    def __init__(self, num_classes, model_arch: str = model_archs[0], pann_cnn10_encoder_ckpt_path: str = '', pann_cnn14_encoder_ckpt_path: str = '', use_cbam: bool = use_cbam, use_pna: bool = use_pna, use_median_filter: bool = use_median_filter):
         """Initialising model for Task 5 of DCASE
 
         Args:
@@ -230,7 +231,7 @@ class Task5Model(nn.Module):
             self.model_arch = model_arch
 
         self.use_cbam = use_cbam
-
+        self.use_pna = use_pna
         self.use_median_filter = use_median_filter
 
         if self.model_arch == 'mobilenetv2':
@@ -238,12 +239,12 @@ class Task5Model(nn.Module):
                 nn.BatchNorm2d(1),
                 # 44.1k (128, 656)
                 # 16.0k (128, 656)
-                nn.Conv2d(1, 3, 1, padding=0), nn.GELU(),
-                nn.Conv2d(3, 10, 1, padding=0), nn.GELU(),
-                nn.Conv2d(10, 20, 1, padding=0), nn.GELU(),
-                nn.Conv2d(20, 10, 1, padding=0), nn.GELU(),
-                # nn.Conv2d(1, 10, (64, 2), padding=0), nn.GELU(), # (128, 656) -> (64, 656)
-                nn.Conv2d(10, 3, 1, padding=0), nn.GELU())
+                nn.Conv2d(1, 3, 1, padding=0), nn.Mish(),
+                nn.Conv2d(3, 10, 1, padding=0), nn.Mish(),
+                nn.Conv2d(10, 20, 1, padding=0), nn.Mish(),
+                nn.Conv2d(20, 10, 1, padding=0), nn.Mish(),
+                # nn.Conv2d(1, 10, (64, 2), padding=0), nn.Mish(), # (128, 656) -> (64, 656)
+                nn.Conv2d(10, 3, 1, padding=0), nn.Mish())
             self.mv2 = torchvision.models.mobilenet_v2(pretrained=True)
 
             if self.use_cbam:
@@ -251,9 +252,9 @@ class Task5Model(nn.Module):
                     channel=1280, reduction=cbam_reduction_factor, kernel_size=cbam_kernel_size)
 
             self.final = nn.Sequential(
-                nn.Linear(1280, 512), nn.GELU(), nn.BatchNorm1d(512),
-                nn.Linear(512, 256), nn.GELU(), nn.BatchNorm1d(256),
-                nn.Linear(256, 128), nn.GELU(), nn.BatchNorm1d(128),
+                nn.Linear(1280, 512), nn.Mish(), nn.BatchNorm1d(512),
+                nn.Linear(512, 256), nn.Mish(), nn.BatchNorm1d(256),
+                nn.Linear(256, 128), nn.Mish(), nn.BatchNorm1d(128),
                 nn.Linear(128, num_classes))
 
         elif self.model_arch == 'pann_cnn10':
@@ -275,8 +276,11 @@ class Task5Model(nn.Module):
                 self.cbam = CBAMBlock(
                     channel=512, reduction=cbam_reduction_factor, kernel_size=cbam_kernel_size)
 
+            if self.use_pna:
+                self.pna = ParNetAttention(channel=512)
+
             self.final = nn.Sequential(
-                nn.Linear(512, 256), nn.GELU(), nn.BatchNorm1d(256),
+                nn.Linear(512, 256), nn.Mish(), nn.BatchNorm1d(256),
                 nn.Linear(256, num_classes))
 
         elif self.model_arch == 'pann_cnn14':
@@ -298,9 +302,12 @@ class Task5Model(nn.Module):
                 self.cbam = CBAMBlock(
                     channel=2048, reduction=cbam_reduction_factor, kernel_size=cbam_kernel_size)
 
+            if self.use_pna:
+                self.pna = ParNetAttention(channel=2048)
+
             self.final = nn.Sequential(
-                nn.Linear(2048, 512), nn.GELU(), nn.BatchNorm1d(512),
-                nn.Linear(512, 256), nn.GELU(), nn.BatchNorm1d(256),
+                nn.Linear(2048, 512), nn.Mish(), nn.BatchNorm1d(512),
+                nn.Linear(512, 256), nn.Mish(), nn.BatchNorm1d(256),
                 nn.Linear(256, num_classes))
 
     def forward(self, x):
@@ -319,6 +326,8 @@ class Task5Model(nn.Module):
         # x = x.max(dim=-1)[0].max(dim=-1)[0] # change it to mean
         if self.use_cbam:
             x = self.cbam(x)
+        if x.use_pna:
+            x = self.pna(x)
         x = torch.mean(x, dim=(-1, -2))
         x = self.final(x)  # -> (batch_size, num_classes)
         return x
