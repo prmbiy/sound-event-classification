@@ -237,14 +237,8 @@ class Task5Model(nn.Module):
         if self.model_arch == 'mobilenetv2':
             self.bw2col = nn.Sequential(
                 nn.BatchNorm2d(1),
-                # 44.1k (128, 656)
-                # 16.0k (128, 656)
-                nn.Conv2d(1, 3, 1, padding=0), nn.Mish(),
-                nn.Conv2d(3, 10, 1, padding=0), nn.Mish(),
-                nn.Conv2d(10, 20, 1, padding=0), nn.Mish(),
-                nn.Conv2d(20, 10, 1, padding=0), nn.Mish(),
-                # nn.Conv2d(1, 10, (64, 2), padding=0), nn.Mish(), # (128, 656) -> (64, 656)
-                nn.Conv2d(10, 3, 1, padding=0), nn.Mish())
+                nn.Conv2d(1, 10, 1, padding=0), nn.ReLU(),
+                nn.Conv2d(10, 3, 1, padding=0), nn.ReLU())
             self.mv2 = torchvision.models.mobilenet_v2(pretrained=True)
 
             if self.use_cbam:
@@ -252,10 +246,8 @@ class Task5Model(nn.Module):
                     channel=1280, reduction=cbam_reduction_factor, kernel_size=cbam_kernel_size)
 
             self.final = nn.Sequential(
-                nn.Linear(1280, 512), nn.Mish(), nn.BatchNorm1d(512),
-                nn.Linear(512, 256), nn.Mish(), nn.BatchNorm1d(256),
-                nn.Linear(256, 128), nn.Mish(), nn.BatchNorm1d(128),
-                nn.Linear(128, num_classes))
+                nn.Linear(1280, 512), nn.ReLU(), nn.BatchNorm1d(512),
+                nn.Linear(512, num_classes))
 
         elif self.model_arch == 'pann_cnn10':
             if len(pann_cnn10_encoder_ckpt_path) > 0 and os.path.exists(pann_cnn10_encoder_ckpt_path) == False:
@@ -280,7 +272,7 @@ class Task5Model(nn.Module):
                 self.pna = ParNetAttention(channel=512)
 
             self.final = nn.Sequential(
-                nn.Linear(512, 256), nn.Mish(), nn.BatchNorm1d(256),
+                nn.Linear(512, 256), nn.ReLU(), nn.BatchNorm1d(256),
                 nn.Linear(256, num_classes))
 
         elif self.model_arch == 'pann_cnn14':
@@ -306,8 +298,8 @@ class Task5Model(nn.Module):
                 self.pna = ParNetAttention(channel=2048)
 
             self.final = nn.Sequential(
-                nn.Linear(2048, 512), nn.Mish(), nn.BatchNorm1d(512),
-                nn.Linear(512, 256), nn.Mish(), nn.BatchNorm1d(256),
+                nn.Linear(2048, 512), nn.ReLU(), nn.BatchNorm1d(512),
+                nn.Linear(512, 256), nn.ReLU(), nn.BatchNorm1d(256),
                 nn.Linear(256, num_classes))
 
     def forward(self, x):
