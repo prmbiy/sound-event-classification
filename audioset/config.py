@@ -28,7 +28,7 @@ seed = 42
 # nfft/window_len           2560        7056
 # hop_len                   694         1912
 # num_frames                656         84
-sample_rate = 16000
+sample_rate = 44100
 threshold = 0.9
 n_fft = (2560*sample_rate)//44100
 hop_length = (694*sample_rate)//44100

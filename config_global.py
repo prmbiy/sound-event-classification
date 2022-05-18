@@ -1,8 +1,5 @@
 # logmel spectrogram values
-from random import sample
-
-
-sample_rate = 16000
+sample_rate = 44100
 n_fft=(2560*sample_rate)//44100
 hop_length=(694*sample_rate)//44100
 n_mels = 128
