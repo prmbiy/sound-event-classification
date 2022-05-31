@@ -102,7 +102,7 @@ def run(args):
     # Define the device to be used
     device = configureTorchDevice()
     # Instantiate the model
-    if model_arch == 'mobilenetv2':
+    if model_arch == 'mobilenetv2' or model_arch == 'mobilenetv3':
         model = Task5Model(num_classes, model_arch, use_cbam=use_cbam).to(device)
     elif model_arch == 'pann_cnn10':
         model = Task5Model(num_classes, model_arch, pann_cnn10_encoder_ckpt_path=pann_cnn10_encoder_ckpt_path, use_cbam=use_cbam, use_pna = use_pna).to(device)
