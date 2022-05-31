@@ -9,7 +9,7 @@ __email__ = "soham.tiwari800@gmail.com"
 __status__ = "Development"
 
 
-model_archs = ['mobilenetv2', 'pann_cnn10', 'pann_cnn14', "mobilenetv2"]
+model_archs = ['mobilenetv2', 'pann_cnn10', 'pann_cnn14', "mobilenetv3"]
 class_mapping = {}
 class_mapping['breaking'] = 0
 class_mapping['chatter'] = 1
