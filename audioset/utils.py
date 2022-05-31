@@ -80,8 +80,7 @@ class Dynamic_conv2d(nn.Module):
 
         self.in_planes = in_planes
         self.out_planes = out_planes
-        self.kernel_size = kernel_size if type(
-            kernel_size) == 'int' else kernel_size[0]
+        self.kernel_size = kernel_size if isinstance(kernel_size, int) else kernel_size[0]
         self.groups = groups
         self.stride = stride
         self.padding = padding
