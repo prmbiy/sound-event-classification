@@ -8,6 +8,20 @@ __maintainer__ = "Soham Tiwari"
 __email__ = "soham.tiwari800@gmail.com"
 __status__ = "Development"
 
+
+model_archs = ['mobilenetv2', 'pann_cnn10', 'pann_cnn14', "mobilenetv2"]
+class_mapping = {}
+class_mapping['breaking'] = 0
+class_mapping['chatter'] = 1
+class_mapping['crying_sobbing'] = 2
+class_mapping['emergency_vehicle'] = 3
+class_mapping['explosion'] = 4
+class_mapping['gunshot_gunfire'] = 5
+class_mapping['motor_vehicle_road'] = 6
+class_mapping['screaming'] = 7
+class_mapping['siren'] = 8
+class_mapping['others'] = 9
+
 num_workers = 2
 feature_type = 'logmelspec'
 num_bins = 128

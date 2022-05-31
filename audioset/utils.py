@@ -2,7 +2,7 @@ from typing import Iterator
 from matplotlib.style import use
 import pandas as pd
 import scipy
-from config import feature_type, permutation, sample_rate, num_frames, use_cbam, cbam_kernel_size, cbam_reduction_factor, use_median_filter, use_pna, n_basis_kernels, temperature, pool_dim
+from config import feature_type, permutation, sample_rate, num_frames, use_cbam, cbam_kernel_size, cbam_reduction_factor, use_median_filter, use_pna, model_archs, class_mapping
 import numpy as np
 import torch
 import torch.nn as nn
@@ -27,18 +27,6 @@ __maintainer__ = "Soham Tiwari"
 __email__ = "soham.tiwari800@gmail.com"
 __status__ = "Development"
 
-model_archs = ['mobilenetv2', 'pann_cnn10', 'pann_cnn14']
-class_mapping = {}
-class_mapping['breaking'] = 0
-class_mapping['chatter'] = 1
-class_mapping['crying_sobbing'] = 2
-class_mapping['emergency_vehicle'] = 3
-class_mapping['explosion'] = 4
-class_mapping['gunshot_gunfire'] = 5
-class_mapping['motor_vehicle_road'] = 6
-class_mapping['screaming'] = 7
-class_mapping['siren'] = 8
-class_mapping['others'] = 9
 
 random_erasing = RandomErasing()
 
@@ -69,8 +57,6 @@ def getLabelFromFilename(file_name: str) -> int:
     """
     label = class_mapping[file_name.split('-')[0]]
     return label
-
-
 
 
 class AudioDataset(Dataset):
@@ -252,6 +238,22 @@ class Task5Model(nn.Module):
 
             self.final = nn.Sequential(
                 nn.Linear(1280, 512), nn.ReLU(), nn.BatchNorm1d(512),
+                nn.Linear(512, num_classes))
+
+        if self.model_arch == 'mobilenetv3':
+            self.bw2col = nn.Sequential(
+                Dynamic_conv2d(1, 10, 1, padding=0),
+                Dynamic_conv2d(10, 3, 1, padding=0),
+                nn.BatchNorm2d(3),
+            )
+            self.mv2 = torchvision.models.mobilenet_v3_large(pretrained=True)
+
+            if self.use_cbam:
+                self.cbam = CBAMBlock(
+                    channel=1000, reduction=cbam_reduction_factor, kernel_size=cbam_kernel_size)
+
+            self.final = nn.Sequential(
+                nn.Linear(1000, 512), nn.ReLU(), nn.BatchNorm1d(512),
                 nn.Linear(512, num_classes))
 
         elif self.model_arch == 'pann_cnn10':
