@@ -1,8 +1,11 @@
 '''https://github.com/qiuqiangkong/audioset_tagging_cnn/blob/master/pytorch/models.py'''
 
+import imp
 import torch
 from torch import nn
 import torch.nn.functional as F
+from dynamic_convolutions import Dynamic_conv2d
+from config import use_fdy
 
 __author__ = "Andrew Koh Jin Jie, Anushka Jain and Soham Tiwari"
 __credits__ = ["Prof Chng Eng Siong", "Yan Zhen", "Tanmay Khandelwal"]
@@ -27,18 +30,22 @@ def init_bn(bn):
     bn.bias.data.fill_(0.)
     bn.weight.data.fill_(1.)
 
-
 class ConvBlock(nn.Module):
-    def __init__(self, in_channels, out_channels):
+    def __init__(self, in_channels, out_channels, use_fdy=use_fdy):
 
         super(ConvBlock, self).__init__()
 
-        self.conv1 = nn.Conv2d(in_channels=in_channels,
+        if use_fdy:
+            self.conv2d = Dynamic_conv2d
+        else:
+            self.conv2d = nn.Conv2d
+
+        self.conv1 = self.conv2d(in_channels=in_channels,
                                out_channels=out_channels,
                                kernel_size=(3, 3), stride=(1, 1),
                                padding=(1, 1), bias=False)
 
-        self.conv2 = nn.Conv2d(in_channels=out_channels,
+        self.conv2 = self.conv2d(in_channels=out_channels,
                                out_channels=out_channels,
                                kernel_size=(3, 3), stride=(1, 1),
                                padding=(1, 1), bias=False)
