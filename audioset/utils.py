@@ -2,10 +2,11 @@ from typing import Iterator
 from matplotlib.style import use
 import pandas as pd
 import scipy
-from config import feature_type, permutation, sample_rate, num_frames, use_cbam, cbam_kernel_size, cbam_reduction_factor, use_median_filter, use_pna
+from config import feature_type, permutation, sample_rate, num_frames, use_cbam, cbam_kernel_size, cbam_reduction_factor, use_median_filter, use_pna, n_basis_kernels, temperature, pool_dim
 import numpy as np
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from torchvision import transforms
 from torch.utils.data import Dataset
 import torchvision
@@ -67,6 +68,79 @@ def getLabelFromFilename(file_name: str) -> int:
     """
     label = class_mapping[file_name.split('-')[0]]
     return label
+
+
+class Dynamic_conv2d(nn.Module):
+    """To perform Frequency Dynamic Convolution or Time Dynamic Convolution.
+    """
+
+    def __init__(self, in_planes, out_planes, kernel_size, groups=1, stride=1, padding=0, bias=False, n_basis_kernels=n_basis_kernels,
+                 temperature=temperature, pool_dim=pool_dim):
+        super(Dynamic_conv2d, self).__init__()
+
+        self.in_planes = in_planes
+        self.out_planes = out_planes
+        self.kernel_size = kernel_size if type(
+            kernel_size) == 'int' else kernel_size[0]
+        self.groups = groups
+        self.stride = stride
+        self.padding = padding
+        self.pool_dim = pool_dim
+
+        self.n_basis_kernels = n_basis_kernels
+        self.attention = attention2d(in_planes, self.kernel_size, self.stride, self.padding, n_basis_kernels,
+                                     temperature, pool_dim)
+
+        self.weight = nn.Parameter(torch.randn(n_basis_kernels, out_planes, in_planes//self.groups, self.kernel_size, self.kernel_size),
+                                   requires_grad=True)
+
+        if bias:
+            self.bias = nn.Parameter(torch.Tensor(n_basis_kernels, out_planes))
+        else:
+            self.bias = None
+
+        for i in range(self.n_basis_kernels):
+            nn.init.kaiming_normal_(self.weight[i])
+
+    def forward(self, x):  # x size : [bs, in_chan, frames, freqs]
+        if self.pool_dim in ['freq', 'chan']:
+            softmax_attention = self.attention(x).unsqueeze(
+                2).unsqueeze(4)    # size : [bs, n_ker, 1, frames, 1]
+        elif self.pool_dim == 'time':
+            softmax_attention = self.attention(x).unsqueeze(
+                2).unsqueeze(3)    # size : [bs, n_ker, 1, 1, freqs]
+        elif self.pool_dim == 'both':
+            softmax_attention = self.attention(
+                x).unsqueeze(-1).unsqueeze(-1).unsqueeze(-1)    # size : [bs, n_ker, 1, 1, 1]
+
+        batch_size = x.size(0)
+
+        # size : [n_ker * out_chan, in_chan]
+        aggregate_weight = self.weight.view(-1, self.in_planes //
+                                            self.groups, self.kernel_size, self.kernel_size)
+
+        if self.bias is not None:
+            aggregate_bias = self.bias.view(-1)
+            output = F.conv2d(x, weight=aggregate_weight, bias=aggregate_bias,
+                              stride=self.stride, padding=self.padding, groups=self.groups)
+        else:
+            output = F.conv2d(x, weight=aggregate_weight, bias=None,
+                              stride=self.stride, padding=self.padding, groups=self.groups)
+            # output size : [bs, n_ker * out_chan, frames, freqs]
+
+        output = output.view(batch_size, self.n_basis_kernels,
+                             self.out_planes, output.size(-2), output.size(-1))
+        # output size : [bs, n_ker, out_chan, frames, freqs]
+
+        if self.pool_dim in ['freq', 'chan']:
+            assert softmax_attention.shape[-2] == output.shape[-2]
+        elif self.pool_dim == 'time':
+            assert softmax_attention.shape[-1] == output.shape[-1]
+
+        # output size : [bs, out_chan, frames, freqs]
+        output = torch.sum(output * softmax_attention, dim=1)
+
+        return output
 
 
 class AudioDataset(Dataset):
@@ -236,9 +310,10 @@ class Task5Model(nn.Module):
 
         if self.model_arch == 'mobilenetv2':
             self.bw2col = nn.Sequential(
-                nn.BatchNorm2d(1),
-                nn.Conv2d(1, 10, 1, padding=0), nn.ReLU(),
-                nn.Conv2d(10, 3, 1, padding=0), nn.ReLU())
+                Dynamic_conv2d(1, 10, 1, padding=0),
+                Dynamic_conv2d(10, 3, 1, padding=0),
+                nn.BatchNorm2d(3),
+            )
             self.mv2 = torchvision.models.mobilenet_v2(pretrained=True)
 
             if self.use_cbam:

@@ -70,3 +70,13 @@ pann_cnn10_encoder_ckpt_path = '/notebooks/sound-event-classification/audioset/m
 pann_cnn14_encoder_ckpt_path = '/notebooks/sound-event-classification/audioset/model/Cnn14_mAP=0.431.pth'
 model_arch = 'mobilenetv2'
 resume_training = 'yes'
+
+# FDY
+use_fdy = True
+use_tdy = False
+n_basis_kernels = 4
+temperature = 31
+if use_fdy:
+    pool_dim = "time"  # FDY use "time", for TDY use "freq"
+elif use_tdy:
+    pool_dim = "freq"
