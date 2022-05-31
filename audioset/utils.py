@@ -250,10 +250,10 @@ class Task5Model(nn.Module):
 
             if self.use_cbam:
                 self.cbam = CBAMBlock(
-                    channel=1000, reduction=cbam_reduction_factor, kernel_size=cbam_kernel_size)
+                    channel=960, reduction=cbam_reduction_factor, kernel_size=cbam_kernel_size)
 
             self.final = nn.Sequential(
-                nn.Linear(1000, 512), nn.ReLU(), nn.BatchNorm1d(512),
+                nn.Linear(960, 512), nn.ReLU(), nn.BatchNorm1d(512),
                 nn.Linear(512, num_classes))
 
         elif self.model_arch == 'pann_cnn10':
