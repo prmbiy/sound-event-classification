@@ -40,15 +40,15 @@ class ConvBlock(nn.Module):
         else:
             self.conv2d = nn.Conv2d
 
-        self.conv1 = self.conv2d(in_channels=in_channels,
-                               out_channels=out_channels,
-                               kernel_size=(3, 3), stride=(1, 1),
-                               padding=(1, 1), bias=False)
+        self.conv1 = self.conv2d(in_channels,
+                               out_channels,
+                               kernel_size=3, stride=1,
+                               padding=1, bias=False)
 
-        self.conv2 = self.conv2d(in_channels=out_channels,
-                               out_channels=out_channels,
-                               kernel_size=(3, 3), stride=(1, 1),
-                               padding=(1, 1), bias=False)
+        self.conv2 = self.conv2d(out_channels,
+                               out_channels,
+                               kernel_size=3, stride=1,
+                               padding=1, bias=False)
 
         self.bn1 = nn.BatchNorm2d(out_channels)
         self.bn2 = nn.BatchNorm2d(out_channels)
