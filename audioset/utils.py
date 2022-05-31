@@ -246,7 +246,7 @@ class Task5Model(nn.Module):
                 Dynamic_conv2d(10, 3, 1, padding=0),
                 nn.BatchNorm2d(3),
             )
-            self.mv2 = torchvision.models.mobilenet_v3_large(pretrained=True)
+            self.mv3 = torchvision.models.mobilenet_v3_large(pretrained=True)
 
             if self.use_cbam:
                 self.cbam = CBAMBlock(
@@ -313,6 +313,10 @@ class Task5Model(nn.Module):
         if self.model_arch == 'mobilenetv2':
             x = self.bw2col(x)  # -> (batch_size, 3, n_mels, num_frames)
             x = self.mv2.features(x)
+
+        elif self.model_arch == 'mobilenetv3':
+            x = self.bw2col(x)  # -> (batch_size, 3, n_mels, num_frames)
+            x = self.mv3.features(x)
 
         elif self.model_arch == 'pann_cnn10' or self.model_arch == 'pann_cnn14':
             x = x  # -> (batch_size, 1, n_mels, num_frames)
