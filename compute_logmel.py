@@ -49,6 +49,9 @@ def compute_melspec(filename, outdir, audio_segment_length):
         np.save(outdir + remove_codec_substr(filename,
                 remove_codec_from_filename) + '.npy', logmel)
         number_of_files_success+=1
+        if remove_codec_from_filename:
+            logger.info(outdir + remove_codec_substr(filename,
+                remove_codec_from_filename) + '.npy')
     except ValueError:
         print('ERROR IN:', filename)
 
