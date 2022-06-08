@@ -9,6 +9,7 @@ from loguru import logger
 from config_global import n_fft, hop_length, n_mels, fmin, fmax, sample_rate, num_cores, remove_codec_from_filename
 import warnings
 
+number_of_files_success = 0
 
 @logger.catch
 def remove_codec_substr(filename: str, remove_codec_from_filename: bool = remove_codec_from_filename):
@@ -47,6 +48,7 @@ def compute_melspec(filename, outdir, audio_segment_length):
 
         np.save(outdir + remove_codec_substr(filename,
                 remove_codec_from_filename) + '.npy', logmel)
+        number_of_files_success+=1
     except ValueError:
         print('ERROR IN:', filename)
 
@@ -70,7 +72,7 @@ def main(input_path, output_path, audio_segment_length):
         delayed(lambda x: compute_melspec(
             x, output_path + '/', audio_segment_length))(x)
         for x in tqdm(file_list))
-    logger.success(f'Finished computing logmels using sr = {sample_rate}')
+    logger.success(f'Finished computing logmels using sr = {sample_rate}, total successfully converted to logmels = {number_of_files_success}')
 
 
 if __name__ == '__main__':
