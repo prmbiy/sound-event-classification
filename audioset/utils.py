@@ -264,9 +264,9 @@ class Task5Model(nn.Module):
 
             self.AveragePool = nn.AvgPool2d((1, 2), (1, 2))
 
-            self.encoder = Cnn10()
+            self.encoder_pann = Cnn10()
             if self.pann_cnn10_encoder_ckpt_path != '':
-                self.encoder.load_state_dict(torch.load(
+                self.encoder_pann.load_state_dict(torch.load(
                     self.pann_cnn10_encoder_ckpt_path)['model'], strict=False)
                 print(
                     f'loaded pann_cnn14 pretrained encoder state from {self.pann_cnn10_encoder_ckpt_path}')
@@ -277,10 +277,18 @@ class Task5Model(nn.Module):
 
             if self.use_pna:
                 self.pna = ParNetAttention(channel=512)
+            
+            self.encoder = nn.Sequential(
+                self.encoder_pann,
+                self.cbam if self.use_cbam else nn.Identity(),
+                Dynamic_conv2d(512, 256, (10, 1)),
+                Dynamic_conv2d(256, 128, (10, 1)),
+            )
+            # output shape of CNN10 [-1, 512, 39, 4]
 
             self.final = nn.Sequential(
-                nn.Linear(512, 256), nn.ReLU(), nn.BatchNorm1d(256),
-                nn.Linear(256, num_classes))
+                nn.Linear(128, 64), nn.ReLU(), nn.BatchNorm1d(256),
+                nn.Linear(64, num_classes))
 
         elif self.model_arch == 'pann_cnn14':
             if len(pann_cnn14_encoder_ckpt_path) > 0 and os.path.exists(pann_cnn14_encoder_ckpt_path) == False:
@@ -327,8 +335,8 @@ class Task5Model(nn.Module):
             x = self.encoder(x)
         # x-> (batch_size, 1280/512, H, W)
         # x = x.max(dim=-1)[0].max(dim=-1)[0] # change it to mean
-        if self.use_cbam:
-            x = self.cbam(x)
+        # if self.use_cbam:
+        #     x = self.cbam(x)
         if self.use_pna:
             x = self.pna(x)
         x = torch.mean(x, dim=(-1, -2))

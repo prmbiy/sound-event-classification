@@ -35,10 +35,10 @@ class ConvBlock(nn.Module):
 
         super(ConvBlock, self).__init__()
 
-        if use_fdy:
-            self.conv2d = Dynamic_conv2d
-        else:
-            self.conv2d = nn.Conv2d
+        # if use_fdy:
+        #     self.conv2d = Dynamic_conv2d
+        # else:
+        self.conv2d = nn.Conv2d
 
         self.conv1_fdy = self.conv2d(in_channels,
                                out_channels,

@@ -213,7 +213,7 @@ if __name__ == "__main__":
                         type=str, default=pann_cnn14_encoder_ckpt_path)
     parser.add_argument('-n', '--num_frames', type=int, default=num_frames)
     parser.add_argument('-p', '--permutation', type=int,
-                        nargs='+', default=permutation)
+                        nargs='+', default=permutation) 
     parser.add_argument('-s', '--seed', type=int, default=seed)
     parser.add_argument('-rt', '--resume_training', action='store_true')
     parser.add_argument('-bs', '--balanced_sampler', type=bool, default=False)
