@@ -42,13 +42,16 @@ seed = 42
 # nfft/window_len           2560        7056
 # hop_len                   694         1912
 # num_frames                656         84
-sample_rate = 16000
+sample_rate = 22050
 threshold = 0.9
+# n_fft = (2560*sample_rate)//44100
+# n_fft = 2048
+# hop_length = 512
 n_fft = (2560*sample_rate)//44100
 hop_length = (694*sample_rate)//44100
 n_mels = 128
 fmin = 20
-fmax = 22050
+fmax = 8000
 # num_frames = 200
 num_frames = int(np.ceil(sample_rate*length_full_recording/hop_length))
 
@@ -58,7 +61,7 @@ target_names = ['breaking', 'chatter', 'crying_sobbing', 'emergency_vehicle',
                 'explosion', 'gunshot_gunfire', 'motor_vehicle_road', 'screaming', 'siren', 'others']
 num_classes = len(target_names)
 # for balancedbatchsampler, for every batch to have equal number of samples, the size of each batch should be a multiple of the num of classes
-batch_size = 64
+batch_size = 32
 grad_acc_steps = 1
 
 # voting = 'simple_average'

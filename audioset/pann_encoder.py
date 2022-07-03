@@ -40,12 +40,12 @@ class ConvBlock(nn.Module):
         # else:
         self.conv2d = nn.Conv2d
 
-        self.conv1_fdy = self.conv2d(in_channels,
+        self.conv1 = self.conv2d(in_channels,
                                out_channels,
                                kernel_size=3, stride=1,
                                padding=1, bias=False)
 
-        self.conv2_fdy = self.conv2d(out_channels,
+        self.conv2 = self.conv2d(out_channels,
                                out_channels,
                                kernel_size=3, stride=1,
                                padding=1, bias=False)
@@ -64,8 +64,8 @@ class ConvBlock(nn.Module):
     def forward(self, input, pool_size=(2, 2), pool_type='avg'):
 
         x = input
-        x = F.relu_(self.bn1(self.conv1_fdy(x)))
-        x = F.relu_(self.bn2(self.conv2_fdy(x)))
+        x = F.relu_(self.bn1(self.conv1(x)))
+        x = F.relu_(self.bn2(self.conv2(x)))
         if pool_type == 'max':
             x = F.max_pool2d(x, kernel_size=pool_size)
         elif pool_type == 'avg':
