@@ -2,6 +2,22 @@
 
 This repository contains code for various sound event classification systems implemented on two datasets - (a) DCASE 2019 Task 5 and (b) a subset of Audioset.
 
+## Getting Started
+This repository uses the code in the [External-Attention-pytorch repository](https://github.com/xmu-xiaoma666/External-Attention-pytorch) as a submodule. 
+
+Hence to only clone this repository:
+```
+git clone xx
+```
+
+To clone this repository and the sub-modules at the same time: 
+```
+git clone --recurse-submodules -j8 xx
+```
+`-j8` is an optional performance optimization that became available in version 2.8, and fetches up to 8 submodules at a time in parallel
+
+Look at this [StackOverflow answer](https://stackoverflow.com/a/4438292) for more information.
+
 ## Organization
 Each dataset has its own folder and contains the following subfolders:
 1. augmentation: package which contains code for various data augmentations
