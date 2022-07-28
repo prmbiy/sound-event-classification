@@ -8,20 +8,31 @@ __maintainer__ = "Soham Tiwari"
 __email__ = "soham.tiwari800@gmail.com"
 __status__ = "Development"
 
+use_resampled_data = False
 
 model_archs = ['mobilenetv2', 'pann_cnn10', 'pann_cnn14', "mobilenetv3"]
 class_mapping = {}
-class_mapping['breaking'] = 0
-class_mapping['chatter'] = 1
-class_mapping['crying_sobbing'] = 2
-class_mapping['emergency_vehicle'] = 3
-class_mapping['explosion'] = 4
-class_mapping['gunshot_gunfire'] = 5
-class_mapping['motor_vehicle_road'] = 6
-class_mapping['screaming'] = 7
-class_mapping['siren'] = 8
-class_mapping['others'] = 9
-
+if use_resampled_data:
+    class_mapping['Breaking'] = 0
+    class_mapping['Crowd'] = 1
+    class_mapping['Crying, sobbing'] = 2
+    class_mapping['Explosion'] = 3
+    class_mapping['Gunshot, gunfire'] = 4
+    class_mapping['Motor vehicle (road)'] = 5
+    class_mapping['Screaming'] = 6
+    class_mapping['Siren'] = 7
+else:
+    class_mapping['breaking'] = 0
+    class_mapping['chatter'] = 1
+    class_mapping['crying_sobbing'] = 2
+    class_mapping['emergency_vehicle'] = 3
+    class_mapping['explosion'] = 4
+    class_mapping['gunshot_gunfire'] = 5
+    class_mapping['motor_vehicle_road'] = 6
+    class_mapping['screaming'] = 7
+    class_mapping['siren'] = 8
+    class_mapping['others'] = 9
+    
 num_workers = 2
 feature_type = 'logmelspec'
 num_bins = 128
@@ -42,7 +53,7 @@ seed = 42
 # nfft/window_len           2560        7056
 # hop_len                   694         1912
 # num_frames                656         84
-sample_rate = 22050
+sample_rate = 16000
 threshold = 0.9
 # n_fft = (2560*sample_rate)//44100
 # n_fft = 2048
@@ -57,8 +68,9 @@ num_frames = int(np.ceil(sample_rate*length_full_recording/hop_length))
 
 permutation = [0, 1, 2, 3, 4]
 workspace = '/notebooks/sound-event-classification/audioset'
-target_names = ['breaking', 'chatter', 'crying_sobbing', 'emergency_vehicle',
-                'explosion', 'gunshot_gunfire', 'motor_vehicle_road', 'screaming', 'siren', 'others']
+# target_names = ['breaking', 'chatter', 'crying_sobbing', 'emergency_vehicle',
+#                 'explosion', 'gunshot_gunfire', 'motor_vehicle_road', 'screaming', 'siren', 'others']
+target_names = list(class_mapping.keys())
 num_classes = len(target_names)
 # for balancedbatchsampler, for every batch to have equal number of samples, the size of each batch should be a multiple of the num of classes
 batch_size = 32

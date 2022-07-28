@@ -18,8 +18,10 @@ import argparse
 from utils import AudioDataset, Task5Model, configureTorchDevice, getSampleRateString, BalancedBatchSampler
 from augmentation.SpecTransforms import TimeMask, FrequencyMask, RandomCycle
 from torchsummary import summary
-from config import feature_type, num_frames, seed, permutation, batch_size, num_workers, num_classes, learning_rate, amsgrad, patience, verbose, epochs, workspace, sample_rate, early_stopping, grad_acc_steps, model_arch, pann_cnn10_encoder_ckpt_path, pann_cnn14_encoder_ckpt_path, resume_training, n_mels, use_cbam
+from config import feature_type, num_frames, seed, permutation, batch_size, num_workers, num_classes, learning_rate, amsgrad, patience, verbose, epochs, workspace, sample_rate, early_stopping, grad_acc_steps, model_arch, pann_cnn10_encoder_ckpt_path, pann_cnn14_encoder_ckpt_path, resume_training, n_mels, use_cbam, use_resampled_data 
 import wandb
+import sklearn
+from glob import glob
 
 __author__ = "Andrew, Yan Zhen, Anushka and Soham"
 __credits__ = ["Prof Chng Eng Siong", "Yan Zhen", "Tanmay Khandelwal"]
@@ -58,14 +60,22 @@ def run(args):
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
     os.makedirs('{}/model'.format(workspace), exist_ok=True)
+    
+    if use_resampled_data:
+        file_list = [os.path.basename(p)[:-8] for p in np.unique(glob('{}/data/{}/audio_{}/*.wav.npy'.format(workspace,
+                               feature_type, getSampleRateString(sample_rate))))]
+        train_list, val_list = sklearn.model_selection.train_test_split(file_list, train_size=0.8, random_state = seed)
+        train_df = pd.DataFrame(train_list)
+        valid_df = pd.DataFrame(val_list)
+    else:
+        folds = []
+        for i in range(5):
+            folds.append(pd.read_csv(
+                '{}/split/fold_{}_c.txt'.format(workspace, i), delimiter=" ", header=None))
 
-    folds = []
-    for i in range(5):
-        folds.append(pd.read_csv(
-            '{}/split/fold_{}_c.txt'.format(workspace, i), delimiter=" ", header=None))
-
-    train_df = pd.concat([folds[perm[0]], folds[perm[1]], folds[perm[2]]])
-    valid_df = folds[perm[3]]
+        train_df = pd.concat([folds[perm[0]], folds[perm[1]], folds[perm[2]]])
+        valid_df = folds[perm[3]]
+    
     # test_df = folds[perm[4]]
 
     spec_transforms = transforms.Compose([
@@ -109,7 +119,7 @@ def run(args):
     elif model_arch == 'pann_cnn14':
         model = Task5Model(num_classes, model_arch, pann_cnn14_encoder_ckpt_path=pann_cnn14_encoder_ckpt_path, use_cbam=use_cbam, use_pna = use_pna).to(device)
     print(f'Using {model_arch} model.')
-    summary(model, (1, n_mels, num_frames))
+#     summary(model, (1, n_mels, num_frames))
     wandb.watch(model, log_freq=100)
     folderpath = '{}/model/{}/{}'.format(workspace, expt_name,
                                       getSampleRateString(sample_rate))
