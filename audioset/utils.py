@@ -229,7 +229,10 @@ class Task5Model(nn.Module):
                 Dynamic_conv2d(1, 10, 1, padding=0),
                 Dynamic_conv2d(10, 3, 1, padding=0),
                 nn.BatchNorm2d(3),
+                CBAMBlock(
+                    channel=3, reduction=cbam_reduction_factor, kernel_size=cbam_kernel_size) if self.use_cbam else nn.Identity()
             )
+            
             self.mv2 = torchvision.models.mobilenet_v2(pretrained=True)
 
             if self.use_cbam:
