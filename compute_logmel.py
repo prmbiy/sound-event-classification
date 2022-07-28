@@ -10,9 +10,10 @@ from config_global import n_fft, hop_length, n_mels, fmin, fmax, sample_rate, nu
 import warnings
 
 number_of_files_success = 0
+logger.add(f'compute_logmel_sr={sample_rate}.log')
 
 @logger.catch
-def remove_codec_substr(filename: str, remove_codec_from_filename: bool = remove_codec_from_filename):
+def remove_codec_substr(filename: str, remove_codec_from_filename: bool = True):
     """Utility function to remove codec substring from audio files in audioset dataset.
 
     Args:
@@ -30,6 +31,7 @@ def remove_codec_substr(filename: str, remove_codec_from_filename: bool = remove
 
 @logger.catch
 def compute_melspec(filename, outdir, audio_segment_length):
+    global number_of_files_success
     try:
         wav = librosa.load(filename, sr=sample_rate)[0]
         if(audio_segment_length != -1 and audio_segment_length != 0):
@@ -45,20 +47,18 @@ def compute_melspec(filename, outdir, audio_segment_length):
                 fmin=fmin,
                 fmax=fmax)
         logmel = librosa.core.power_to_db(melspec)
-
-        np.save(outdir + remove_codec_substr(filename,
-                remove_codec_from_filename) + '.npy', logmel)
-        number_of_files_success+=1
-        if remove_codec_from_filename:
-            logger.info(outdir + remove_codec_substr(filename,
+        save_path = os.path.join(outdir, remove_codec_substr(filename,
                 remove_codec_from_filename) + '.npy')
+        np.save(save_path, logmel)
+        logger.success(save_path)
+        number_of_files_success+=1
     except ValueError:
         print('ERROR IN:', filename)
+        logger.error(f"{filename} - {save_path}")
 
 
 @logger.catch
 def main(input_path, output_path, audio_segment_length):
-    logger.add(f'compute_logmel_sr={sample_rate}.log', rotation='100 KB')
     logger.info(f"PARAMS:")
     logger.info(f"n_fft = {n_fft}")
     logger.info(f"hop_length = {hop_length}")
@@ -73,8 +73,9 @@ def main(input_path, output_path, audio_segment_length):
     os.makedirs(output_path, exist_ok=True)
     _ = Parallel(n_jobs=num_cores)(
         delayed(lambda x: compute_melspec(
-            x, output_path + '/', audio_segment_length))(x)
+            x, output_path, audio_segment_length))(x)
         for x in tqdm(file_list))
+    global number_of_files_success
     logger.success(f'Finished computing logmels using sr = {sample_rate}, total successfully converted to logmels = {number_of_files_success}')
 
 
