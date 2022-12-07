@@ -15,11 +15,12 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 import random
 import argparse
-from utils import AudioDataset, Task5Model, configureTorchDevice, getSampleRateString, BalancedBatchSampler
+from utils import AudioDataset, Task5Model, configureTorchDevice, getSampleRateString, BalancedBatchSampler, prism_loss
+from SKCRNN import SKNet26, SKNet50, CRNN9
 from augmentation.SpecTransforms import TimeMask, FrequencyMask, RandomCycle
 from torchsummary import summary
-from config import feature_type, num_frames, seed, permutation, batch_size, num_workers, num_classes, learning_rate, amsgrad, patience, verbose, epochs, workspace, sample_rate, early_stopping, grad_acc_steps, model_arch, pann_cnn10_encoder_ckpt_path, pann_cnn14_encoder_ckpt_path, resume_training, n_mels, use_cbam, use_resampled_data 
-import wandb
+from config import feature_type, num_frames, seed, permutation, batch_size, num_workers, num_classes, learning_rate, amsgrad, patience, verbose, epochs, workspace, sample_rate, early_stopping, grad_acc_steps, model_arch, pann_cnn10_encoder_ckpt_path, pann_cnn14_encoder_ckpt_path, sk_cnn26_encoder_path, resume_training, n_mels, use_cbam, use_resampled_data
+# import wandb
 import sklearn
 from glob import glob
 
@@ -32,8 +33,8 @@ __email__ = "soham.tiwari800@gmail.com"
 __status__ = "Development"
 
 def run(args):
-    wandb.init(project="st-project-sec", entity="sohamtiwari3120")
-    wandb.config.update(args)
+    # wandb.init(project="st-project-sec", entity="sohamtiwari3120")
+    # wandb.config.update(args)
     expt_name = args.expt_name
     workspace = args.workspace
     feature_type = args.feature_type
@@ -45,12 +46,14 @@ def run(args):
     model_arch = args.model_arch
     use_cbam = args.use_cbam
     use_pna = args.use_pna
-    print(f'Using cbam: {use_cbam}')
-    print(f'Using pna: {use_pna}')
+    # print(f'Using cbam: {use_cbam}')
+    # print(f'Using pna: {use_pna}')
     if model_arch == 'pann_cnn10':
         pann_cnn10_encoder_ckpt_path = args.pann_cnn10_encoder_ckpt_path
     elif model_arch == 'pann_cnn14':
         pann_cnn14_encoder_ckpt_path = args.pann_cnn14_encoder_ckpt_path
+    elif model_arch == 'sk_cnn26':
+        sk_cnn26_encoder_path = args.sk_cnn26_encoder_path
     balanced_sampler = args.balanced_sampler
 
     starting_epoch = 0
@@ -62,9 +65,23 @@ def run(args):
     os.makedirs('{}/model'.format(workspace), exist_ok=True)
     
     if use_resampled_data:
-        file_list = [os.path.basename(p)[:-8] for p in np.unique(glob('{}/data/{}/audio_{}/*.wav.npy'.format(workspace,
+        train_list = [os.path.basename(p)[:-8] for p in np.unique(glob('{}/data/{}/audio_{}/train/*.wav.npy'.format(workspace,
                                feature_type, getSampleRateString(sample_rate))))]
-        train_list, val_list = sklearn.model_selection.train_test_split(file_list, train_size=0.8, random_state = seed)
+        
+        train_list_size = len(train_list)
+        for i in range(0, train_list_size):
+            if train_list[train_list_size - i - 1].startswith("Silent") or "others" in train_list[train_list_size - i - 1]:
+                del train_list[train_list_size - i - 1]
+                
+        val_list = [os.path.basename(p)[:-8] for p in np.unique(glob('{}/data/{}/audio_{}/valid/*.wav.npy'.format(workspace,
+                               feature_type, getSampleRateString(sample_rate))))]
+        
+        val_list_size = len(val_list)
+        for i in range(0, val_list_size):
+            if val_list[val_list_size - i - 1].startswith("Silent") or "others" in val_list[val_list_size - i - 1]:
+                del val_list[val_list_size - i - 1]
+                
+        # train_list, val_list = sklearn.model_selection.train_test_split(file_list, train_size=0.8, random_state = seed)
         train_df = pd.DataFrame(train_list)
         valid_df = pd.DataFrame(val_list)
     else:
@@ -92,18 +109,18 @@ def run(args):
 
     # Create the datasets and the dataloaders
 
-    train_dataset = AudioDataset(workspace, train_df, feature_type=feature_type,
+    train_dataset = AudioDataset(workspace, train_df,"train", feature_type=feature_type,
                                  perm=perm,
                                  resize=num_frames,
                                  image_transform=albumentations_transform,
                                  spec_transform=spec_transforms)
 
     valid_dataset = AudioDataset(
-        workspace, valid_df, feature_type=feature_type, perm=perm, resize=num_frames)
+        workspace, valid_df,"valid", feature_type=feature_type, perm=perm, resize=num_frames)
 
     val_loader = DataLoader(valid_dataset, batch_size,
                             shuffle=False, num_workers=num_workers)
-    print(f'Using balanced_sampler = {balanced_sampler}')
+    # print(f'Using balanced_sampler = {balanced_sampler}')
     if balanced_sampler:
         train_loader = DataLoader(train_dataset, batch_size, sampler=BalancedBatchSampler(train_df), num_workers=num_workers, drop_last=True)
     else:
@@ -118,14 +135,20 @@ def run(args):
         model = Task5Model(num_classes, model_arch, pann_cnn10_encoder_ckpt_path=pann_cnn10_encoder_ckpt_path, use_cbam=use_cbam, use_pna = use_pna).to(device)
     elif model_arch == 'pann_cnn14':
         model = Task5Model(num_classes, model_arch, pann_cnn14_encoder_ckpt_path=pann_cnn14_encoder_ckpt_path, use_cbam=use_cbam, use_pna = use_pna).to(device)
+    elif model_arch == 'sk_cnn26':
+        model = SKNet26().to(device)
+    elif model_arch == 'sk_cnn50':
+        model = SKNet50().to(device)
+    elif model_arch == 'crnn9':
+        model = CRNN9().to(device)
     print(f'Using {model_arch} model.')
 #     summary(model, (1, n_mels, num_frames))
-    wandb.watch(model, log_freq=100)
+    # wandb.watch(model, log_freq=100)
     folderpath = '{}/model/{}/{}'.format(workspace, expt_name,
                                       getSampleRateString(sample_rate))
     os.makedirs(folderpath, exist_ok=True)
-    model_path = '{}/model_{}_{}_{}_use_cbam_{}'.format(folderpath,
-                                            feature_type, str(perm[0])+str(perm[1])+str(perm[2]), model_arch, use_cbam)
+    model_path = '{}/model_{}_{}_{}'.format(folderpath,
+                                            feature_type, str(perm[0])+str(perm[1])+str(perm[2]), model_arch)
 
     # Define optimizer, scheduler and loss criteria
     optimizer = optim.Adam(
@@ -162,7 +185,7 @@ def run(args):
                 # print(inputs.shape)
                 # print(inputs)
                 outputs = model(inputs)
-                loss = criterion(outputs, label)
+                loss = criterion(outputs, label) + prism_loss(outputs)
                 loss.backward()
                 if batch % grad_acc_steps == 0 or batch % len(train_loader) == 0:
                     optimizer.step()
@@ -176,19 +199,18 @@ def run(args):
             with torch.set_grad_enabled(False):
                 model = model.eval()
                 outputs = model(inputs)
-                loss = criterion(outputs, labels)
+                loss = criterion(outputs, labels) + prism_loss(outputs)
                 this_epoch_valid_loss += loss.detach().cpu().numpy()
 
         this_epoch_train_loss /= len(train_df)
         this_epoch_valid_loss /= len(valid_df)
-        wandb.log({"train":{
-            "loss": this_epoch_train_loss
-        }})
-        wandb.log({"validation":{
-            "loss": this_epoch_valid_loss
-        }})
-        print(
-            f"train_loss = {this_epoch_train_loss}, val_loss={this_epoch_valid_loss}")
+        # wandb.log({"train":{
+        #     "loss": this_epoch_train_loss
+        # }})
+        # wandb.log({"validation":{
+        #     "loss": this_epoch_valid_loss
+        # }})
+        print(f"train_loss = {this_epoch_train_loss}, val_loss={this_epoch_valid_loss}")
         train_loss_hist.append(this_epoch_train_loss)
         valid_loss_hist.append(this_epoch_valid_loss)
 
@@ -221,6 +243,8 @@ if __name__ == "__main__":
                         type=str, default=pann_cnn10_encoder_ckpt_path)
     parser.add_argument('-cp14', '--pann_cnn14_encoder_ckpt_path',
                         type=str, default=pann_cnn14_encoder_ckpt_path)
+    parser.add_argument('-sk26', '--sk_cnn26_encoder_path',
+                        type=str, default=sk_cnn26_encoder_path)
     parser.add_argument('-n', '--num_frames', type=int, default=num_frames)
     parser.add_argument('-p', '--permutation', type=int,
                         nargs='+', default=permutation) 

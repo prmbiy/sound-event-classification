@@ -24,8 +24,10 @@ def remove_codec_substr(filename: str, remove_codec_from_filename: bool = True):
         str: Final filepath to be used.
     """
     output_filename = os.path.basename(filename)
+    # print(f"Before: {output_filename}")
     if remove_codec_from_filename:
         output_filename = output_filename[:output_filename.rindex('_')]+'.wav'
+    # print(f"After: {output_filename}")
     return output_filename
 
 
@@ -71,7 +73,7 @@ def main(input_path, output_path, audio_segment_length):
     logger.info(f'Starting computing logmels using above params.')
     file_list = glob(input_path + '/*.wav')
     os.makedirs(output_path, exist_ok=True)
-    _ = Parallel(n_jobs=num_cores)(
+    _ = Parallel(n_jobs=num_cores, backend="threading")(
         delayed(lambda x: compute_melspec(
             x, output_path, audio_segment_length))(x)
         for x in tqdm(file_list))

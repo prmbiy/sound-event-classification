@@ -8,7 +8,7 @@ __maintainer__ = "Soham Tiwari"
 __email__ = "soham.tiwari800@gmail.com"
 __status__ = "Development"
 
-use_resampled_data = False
+use_resampled_data = True
 
 model_archs = ['mobilenetv2', 'pann_cnn10', 'pann_cnn14', "mobilenetv3"]
 class_mapping = {}
@@ -21,6 +21,8 @@ if use_resampled_data:
     class_mapping['Motor vehicle (road)'] = 5
     class_mapping['Screaming'] = 6
     class_mapping['Siren'] = 7
+    class_mapping['Male speech'] = 8
+    class_mapping['Female speech'] = 9
 else:
     class_mapping['breaking'] = 0
     class_mapping['chatter'] = 1
@@ -42,7 +44,7 @@ amsgrad = True
 verbose = True
 patience = 5
 epochs = 50
-early_stopping = 20
+early_stopping = 10
 gpu = False
 channels = 2
 length_full_recording = 10
@@ -53,7 +55,7 @@ seed = 42
 # nfft/window_len           2560        7056
 # hop_len                   694         1912
 # num_frames                656         84
-sample_rate = 16000
+sample_rate = 44100
 threshold = 0.9
 # n_fft = (2560*sample_rate)//44100
 # n_fft = 2048
@@ -73,7 +75,9 @@ workspace = '/notebooks/sound-event-classification/audioset'
 target_names = list(class_mapping.keys())
 num_classes = len(target_names)
 # for balancedbatchsampler, for every batch to have equal number of samples, the size of each batch should be a multiple of the num of classes
-batch_size = 32
+#batch_size = 128 #this works for paperspace Free-A5000
+batch_size = 128 #this works for paperspace Free-A6000
+# batch_size = 512 #Free-A100-80G
 grad_acc_steps = 1
 
 # voting = 'simple_average'
@@ -97,6 +101,7 @@ use_median_filter = False
 # paperspace
 pann_cnn10_encoder_ckpt_path = '/notebooks/sound-event-classification/audioset/model/Cnn10_mAP=0.380.pth'
 pann_cnn14_encoder_ckpt_path = '/notebooks/sound-event-classification/audioset/model/Cnn14_mAP=0.431.pth'
+sk_cnn26_encoder_path = '/notebooks/sound-event-classification/audioset/model/SKcnn26_27OCT.pth'
 model_arch = 'mobilenetv2'
 resume_training = 'yes'
 

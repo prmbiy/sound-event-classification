@@ -55,16 +55,21 @@ def getLabelFromFilename(file_name: str) -> int:
     Returns:
         int: integer label for the audio file name
     """
-    label = class_mapping[file_name.split('-')[0]]
+    
+    if file_name.split('-')[0].__contains__("_"):
+        label = class_mapping[file_name.split('-')[0].split("_")[0]]
+    else:
+        label = class_mapping[file_name.split('-')[0]]
     return label
 
 
 class AudioDataset(Dataset):
 
-    def __init__(self, workspace, df, feature_type=feature_type, perm=permutation, spec_transform=None, image_transform=None, resize=num_frames, sample_rate=sample_rate):
+    def __init__(self, workspace, df, data_type, feature_type=feature_type, perm=permutation, spec_transform=None, image_transform=None, resize=num_frames, sample_rate=sample_rate):
 
         self.workspace = workspace
         self.df = df
+        self.data_type = data_type
         self.filenames = df[0].unique()
         self.feature_type = feature_type
         self.sample_rate = sample_rate
@@ -90,7 +95,7 @@ class AudioDataset(Dataset):
         labels = getLabelFromFilename(file_name)
 
         sample = np.load(
-            f"{self.workspace}/data/{self.feature_type}/audio_{getSampleRateString(self.sample_rate)}/{file_name}.wav.npy")
+            f"{self.workspace}/data/{self.feature_type}/audio_{getSampleRateString(self.sample_rate)}/{self.data_type}/{file_name}.wav.npy")
 
         if self.resize:
             sample = self.resize(sample)
@@ -397,3 +402,19 @@ def dataSampleRateString(type: str, sample_rate: int):
         str: string name for the type of data and sample_rate
     """
     return f"{type}_{getSampleRateString(sample_rate)}"
+
+def prism_loss(predictions, alpha = 0.1, beta = 1.0):
+    
+    n = len(predictions[0])
+    P, Q = n*(n-1)/2, n
+    predictions = torch.unsqueeze(predictions, dim = 1)
+    matrix_grid =  (torch.transpose(predictions, 1, 2) @ predictions)
+    
+    positive_loss = torch.square(predictions).sum(axis = -1)
+    negative_loss = (matrix_grid.sum((1,2)).reshape(-1, 1) - positive_loss)/2
+    
+    whole_loss = negative_loss/P - beta*positive_loss/Q + alpha
+    whole_loss = whole_loss * (whole_loss>0)
+    out = whole_loss.mean()
+    
+    return out
