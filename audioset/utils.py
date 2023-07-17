@@ -46,7 +46,7 @@ def getFileNameFromDf(df: pd.DataFrame, idx: int) -> str:
     return file_name
 
 
-def getLabelFromFilename(file_name: str) -> int:
+def getLabelFromFilename(file_name: str, one_speech = False) -> int:
     """Extracts the label from the filename
 
     Args:
@@ -56,16 +56,20 @@ def getLabelFromFilename(file_name: str) -> int:
         int: integer label for the audio file name
     """
     
-    if file_name.split('-')[0].__contains__("_"):
-        label = class_mapping[file_name.split('-')[0].split("_")[0]]
-    else:
-        label = class_mapping[file_name.split('-')[0]]
+    # if file_name.split('-')[0].__contains__("_"):
+    #     label = class_mapping[file_name.split('-')[0].split("_")[0]]
+    # else:
+    #     label = class_mapping[file_name.split('-')[0]]
+    label = class_mapping[file_name.split('-')[0]]
+    # if one_speech:
+    #     if label == 9:
+    #         label = 8
     return label
 
 
 class AudioDataset(Dataset):
 
-    def __init__(self, workspace, df, data_type, feature_type=feature_type, perm=permutation, spec_transform=None, image_transform=None, resize=num_frames, sample_rate=sample_rate):
+    def __init__(self, workspace, df, data_type, one_speech=False, feature_type=feature_type, perm=permutation, spec_transform=None, image_transform=None, resize=num_frames, sample_rate=sample_rate):
 
         self.workspace = workspace
         self.df = df
@@ -73,6 +77,7 @@ class AudioDataset(Dataset):
         self.filenames = df[0].unique()
         self.feature_type = feature_type
         self.sample_rate = sample_rate
+        self.one_speech = one_speech
 
         self.spec_transform = spec_transform
         self.image_transform = image_transform
@@ -92,7 +97,7 @@ class AudioDataset(Dataset):
 
     def __getitem__(self, idx):
         file_name = getFileNameFromDf(self.df, idx)
-        labels = getLabelFromFilename(file_name)
+        labels = getLabelFromFilename(file_name, self.one_speech)
 
         sample = np.load(
             f"{self.workspace}/data/{self.feature_type}/audio_{getSampleRateString(self.sample_rate)}/{self.data_type}/{file_name}.wav.npy")

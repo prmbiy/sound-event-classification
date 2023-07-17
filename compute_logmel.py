@@ -52,7 +52,7 @@ def compute_melspec(filename, outdir, audio_segment_length):
         save_path = os.path.join(outdir, remove_codec_substr(filename,
                 remove_codec_from_filename) + '.npy')
         np.save(save_path, logmel)
-        logger.success(save_path)
+        # logger.success(save_path)
         number_of_files_success+=1
     except ValueError:
         print('ERROR IN:', filename)

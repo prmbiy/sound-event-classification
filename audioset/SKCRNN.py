@@ -206,12 +206,14 @@ class CRNN(nn.Module):
 
         return output
 
+
+
 def SKNet26(nums_class=10):
     return SKNet(nums_class, [2, 2, 2, 2])
 
 def SKNet50(nums_class=10):
     return SKNet(nums_class, [3, 4, 6, 3])
     
-def CRNN9():
-    return CRNN(128, 1, 10, 256)
+def CRNN9(nums_class=10):
+    return CRNN(128, 1, nums_class, 256)
     

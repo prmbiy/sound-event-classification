@@ -46,6 +46,7 @@ def run(args):
     model_arch = args.model_arch
     use_cbam = args.use_cbam
     use_pna = args.use_pna
+    one_speech = args.one_speech
     # print(f'Using cbam: {use_cbam}')
     # print(f'Using pna: {use_pna}')
     if model_arch == 'pann_cnn10':
@@ -109,14 +110,14 @@ def run(args):
 
     # Create the datasets and the dataloaders
 
-    train_dataset = AudioDataset(workspace, train_df,"train", feature_type=feature_type,
+    train_dataset = AudioDataset(workspace, train_df,"train", one_speech=one_speech, feature_type=feature_type,
                                  perm=perm,
                                  resize=num_frames,
                                  image_transform=albumentations_transform,
                                  spec_transform=spec_transforms)
 
     valid_dataset = AudioDataset(
-        workspace, valid_df,"valid", feature_type=feature_type, perm=perm, resize=num_frames)
+        workspace, valid_df,"valid", one_speech=one_speech, feature_type=feature_type, perm=perm, resize=num_frames)
 
     val_loader = DataLoader(valid_dataset, batch_size,
                             shuffle=False, num_workers=num_workers)
@@ -251,6 +252,7 @@ if __name__ == "__main__":
     parser.add_argument('-s', '--seed', type=int, default=seed)
     parser.add_argument('-rt', '--resume_training', action='store_true')
     parser.add_argument('-bs', '--balanced_sampler', type=bool, default=False)
+    parser.add_argument('-os', '--one_speech', type=bool, default=False)
     parser.add_argument('-cbam', '--use_cbam', action='store_true')
     parser.add_argument('-pna', '--use_pna', action='store_true')
     parser.add_argument('-ga', '--grad_acc_steps',

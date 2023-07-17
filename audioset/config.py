@@ -13,16 +13,16 @@ use_resampled_data = True
 model_archs = ['mobilenetv2', 'pann_cnn10', 'pann_cnn14', "mobilenetv3"]
 class_mapping = {}
 if use_resampled_data:
-    class_mapping['Breaking'] = 0
-    class_mapping['Crowd'] = 1
-    class_mapping['Crying, sobbing'] = 2
-    class_mapping['Explosion'] = 3
-    class_mapping['Gunshot, gunfire'] = 4
-    class_mapping['Motor vehicle (road)'] = 5
-    class_mapping['Screaming'] = 6
-    class_mapping['Siren'] = 7
-    class_mapping['Male speech'] = 8
-    class_mapping['Female speech'] = 9
+    class_mapping['breaking'] = 0
+    class_mapping['crowd_scream'] = 1
+    class_mapping['crying_sobbing'] = 2
+    class_mapping['explosion'] = 3
+    class_mapping['gunshot_gunfire'] = 4
+    class_mapping['motor_vehicle_road'] = 5
+    class_mapping['siren'] = 6
+    class_mapping['speech'] = 7
+    # class_mapping['Male speech'] = 8    #'Speech' if one_speech is True.
+    # class_mapping['Female speech'] = 9
 else:
     class_mapping['breaking'] = 0
     class_mapping['chatter'] = 1
